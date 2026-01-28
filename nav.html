@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Nav Display</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #222;
+            color: #0f0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #0f0;
+        }
+
+        pre {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Space Shuttle Navigation</h1>
+    <pre id="navOutput"></pre>
+    <p id="thrust"></p>
+
+    <script>
+        const navOutput = document.getElementById('navOutput');
+
+        // Startkoordinaten in Grad
+        const lat0 = 50.333611;
+        const lon0 = 8.115000;
+
+        // Meter pro Grad (grobe Näherung)
+        const degLat2m = 111320;
+        const degLon2m = 111320 * Math.cos(lat0 * Math.PI / 180);
+
+        // Flugzustand
+        let pos = { x: 0, y: 0, z: 0 };
+        let vel = { x: 0, y: 0, z: 0 };
+        let dt = 0.1; // Zeitschritt in Sekunden
+
+        // Triebwerkswerte
+        const ssmeMaxSeaLevelKN = 1860;
+        const srbThrustKN = 13000;
+        const omsThrustKN = 26.7;
+        const rcsThrustKN = 3.87;
+        const g = 9.81;
+
+        let OVdata = null;
+
+        const navChannel = new BroadcastChannel("nav_rcv");
+        navChannel.onmessage = (e) => { OVdata = e.data; };
+
+        function computeTotalThrust() {
+            if (!OVdata) return 0;
+            let totalKN = 0;
+            ['l', 'ctr', 'r'].forEach(side => {
+                if (OVdata.SSME[side]) totalKN += ssmeMaxSeaLevelKN * (OVdata.SSME[side].thrust / 104.5 || 0);
+            });
+            ['l', 'r'].forEach(side => {
+                if (OVdata.SRB[side] && !OVdata.SRB[side].seperated) totalKN += srbThrustKN;
+            });
+            /*['l', 'r'].forEach(side => {
+                if (OVdata.OMS[side]) totalKN += omsThrustKN * (OVdata.OMS[side].thrust || 0);
+            });
+            if (OVdata.RCS) totalKN += rcsThrustKN * (OVdata.RCS.thrustPercent || 0);*/
+            return totalKN;
+        }
+
+        function computeCurrentMass() {
+            if (!OVdata) return 110000 + 760000 + 590000 * 2;
+
+            let mass = 110000; // Orbiter
+            if (!OVdata.et.seperated) {
+                mass += 760000;    // Externer Tank
+                mass += OVdata.et.lh2;
+                mass += OVdata.et.lox;
+            }
+
+            ['l', 'r'].forEach(side => {
+                if (OVdata.SRB[side] && !OVdata.SRB[side].seperated) mass += 590000;
+            });
+
+            // Optional: SSME-Treibstoff
+            //['l', 'ctr', 'r'].forEach(side => {
+            //    if (OVdata.SSME[side] && OVdata.SSME[side].fuelMass) mass += OVdata.SSME[side].fuelMass;
+            //});
+
+
+            return mass;
+        }
+
+        function updatePosition() {
+            if (!OVdata) return;
+
+            const met = OVdata.met || 0; // Optional chaining
+
+            // Position nur aktualisieren, wenn MET > 0
+            if (met > 0) {
+                const thrustKN = computeTotalThrust();
+                const mass = computeCurrentMass();
+
+                const ay = (thrustKN * 1000 / mass)// - g;
+
+                vel.y += ay * dt;
+                pos.y += vel.y * dt;
+
+                const pitchRad = (OVdata.imu.pitch || 0) * Math.PI / 180;
+                const yawRad = (OVdata.imu.yaw || 0) * Math.PI / 180;
+
+                vel.x += Math.sin(yawRad) * ay * dt;
+                vel.z += Math.cos(yawRad) * ay * dt;
+
+                pos.x += vel.x * dt;
+                pos.z += vel.z * dt;
+            }
+
+            // Immer Anzeige aktualisieren, auch wenn MET = 0
+            const lat = lat0 + pos.z / degLat2m;
+            const lon = lon0 + pos.x / degLon2m;
+            const thrustKN = computeTotalThrust();
+            const mass = computeCurrentMass();
+
+            navOutput.textContent =
+                `MET: ${met.toFixed(1)} s
+
+Position:
+Lat: ${lat.toFixed(6)}
+Lon: ${lon.toFixed(6)}
+Höhe: ${pos.y.toFixed(1)} m
+
+Velocity:
+Vx: ${vel.x.toFixed(1)} m/s
+Vy: ${vel.y.toFixed(1)} m/s
+Vz: ${vel.z.toFixed(1)} m/s
+
+Thrust: ${thrustKN.toFixed(1)} kN
+Mass: ${mass.toFixed(0)} kg`;
+        }
+
+
+        setInterval(updatePosition, dt * 1000);
+    </script>
+</body>
+
+</html>

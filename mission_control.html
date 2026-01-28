@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .block {
+            border: 1px solid gray;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="block">
+        BOOSTER
+        <div style="display: flex; flex-direction: row;">
+            <p id="booster-ssme-data" class="block">aaa</p>
+            <p id="booster-srb-data" class="block">aaa</p>
+        </div>
+    </div>
+    <div class="block">
+        GUIDANCE
+        <div style="display: flex; flex-direction: row;">
+            <p id="guidance-imu-data" class="block">aaa</p>
+            <p id="guidance-possim-data" class="block">aaa</p>
+            <p id="guidance-uplink-tel-data" class="block">aaa</p>
+        </div>
+    </div>
+    this will be mission control
+    <p id="output"></p>
+    <button onclick="launch()">LAUNCH CMD</button>
+    <br>
+    <br>
+    <button onclick="terminate('all')">FTS ALLES</button>
+    <script type="module" src="ms_dataInterchange.js"></script>
+    <script>
+        const ftsChannel = new BroadcastChannel("FTS Uplink");
+        const uplink = new BroadcastChannel("uplink");
+        const downlink = new BroadcastChannel("downlink");
+        const eventDownlink = new BroadcastChannel("downlink_event");
+
+        downlink.onmessage = (e) => {
+            //console.log(e.data);
+            const OV = e.data;
+            //BOOSTER
+            document.getElementById("booster-ssme-data").innerHTML =
+                `LEFT: Thrust: ${Math.round(OV.ssme.l.thrust*100)/100}, Pos: ${OV.ssme.l.angx}, ${OV.ssme.l.angz}<br>
+            CENTER: Thrust: ${Math.round(OV.ssme.ctr.thrust*100)/100}, Pos: ${OV.ssme.ctr.angx}, ${OV.ssme.ctr.angz}<br>
+            RIGHT: Thrust: ${Math.round(OV.ssme.r.thrust*100)/100}, Pos: ${OV.ssme.r.angx}, ${OV.ssme.r.angz}`;
+            document.getElementById("booster-srb-data").innerHTML =
+                `LEFT: Ignited: ${OV.SRBs.l.ignited}, Pos: ${OV.SRBs.l.pos[0]}, ${OV.SRBs.l.pos[1]}, Seperated: ${OV.SRBs.l.seperated}<br>
+            RIGHT: Ignited: ${OV.SRBs.r.ignited}, Pos: ${OV.SRBs.r.pos[0]}, ${OV.SRBs.l.pos[1]}, Seperated: ${OV.SRBs.r.seperated}`;
+
+            //GUIDANCE
+            document.getElementById("guidance-imu-data").innerHTML =
+                `Pitch: ${Math.round(OV.imuData.pitch*10)/10}, Roll: ${Math.round(OV.imuData.roll*10)/10}, Yaw: ${Math.round(OV.imuData.yaw*10)/10}<br>
+            Pitch Rate: ${Math.round(OV.imuData.pitchRate*10)/10}, Roll Rate:${Math.round(OV.imuData.rollRate*10)/10}, Yaw Rate: ${Math.round(OV.imuData.yawRate*10)/10}`;
+            /*document.getElementById("guidance-imu-data").innerHTML =
+                `Pitch: ${OV.imuData.pitch}, Roll: ${OV.imuData.roll}, Yaw: ${OV.imuData.yaw}<br>
+            Pitch Rate: ${OV.imuData.pitchRate}, Roll Rate:${OV.imuData.rollRate}, Yaw Rate: ${OV.imuData.yawRate}`;*/
+            document.getElementById("guidance-uplink-tel-data").innerHTML =
+                `Speed: ${Math.round(OV.mission.telemetryPos.V)} km/h, Mach: ${Math.round((OV.mission.telemetryPos.mach/3.6)*1000)/1000}<br>
+                Altitude: ${Math.round(OV.mission.telemetryPos.alt_m)} m, Downrange: ${Math.round(OV.mission.telemetryPos.downrange_m)} m`;
+
+        }
+        eventDownlink.onmessage = (e) => {
+            const data = e.data;
+            console.log(data);
+        }
+
+        function launch() {
+            uplink.postMessage("autoSequenceAndAscent");
+        }
+        function terminate(element) {
+            ftsChannel.postMessage(["terminateConfirm", element]);
+        }
+    </script>
+</body>
+
+</html>
