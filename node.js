@@ -83,62 +83,17 @@ const maneuverHandlerTool = new maneuverHandler();
 const fbwComp = new FlyByWireComputer();
 
 
-const launchPoint = { lat: 50.333611, lon: 8.115000 };
+const launchPoint = { lat: 0, lon: 0 };
 const abortSites = [
   {
-    name: "Launch Site",
-    icao: "RTLS",
-    lat: 50.333611,
-    lon: 8.115000,
+    name: "template",
+    icao: "temp",
+    lat: 0,
+    lon: 0,
     runways: [],
-    type: "RTLS",
+    type: "template",
     minMET: 0,
-    maxMET: 120
-  },
-  {
-    name: "Frankfurt am Main",
-    icao: "EDDF",
-    lat: 50.0379,
-    lon: 8.5622,
-    runways: [
-      { id: "07R", heading: 70 }
-    ],
-    type: "CONTINENTAL",
-    minMET: 120,
-    maxMET: 300
-  },
-  {
-    name: "Leipzig-Halle",
-    icao: "EDDP",
-    lat: 51.4239,
-    lon: 12.2364,
-    runways: [],
-    type: "CONTINENTAL",
-    minMET: 150,
-    maxMET: 360
-  },
-  {
-    name: "Kyiv-Boryspil",
-    icao: "UKBB",
-    lat: 50.3450,
-    lon: 30.8947,
-    runways: [
-      { id: "18L", heading: 180 },
-      { id: "36R", heading: 360 }
-    ],
-    type: "TAL",
-    minMET: 240,
-    maxMET: 480
-  },
-  {
-    name: "Baikonur",
-    icao: "UAON",
-    lat: 45.964,
-    lon: 63.305,
-    runways: [],
-    type: "AOA",
-    minMET: 420,
-    maxMET: Infinity
+    maxMET: -1
   }
 ];
 
@@ -305,7 +260,7 @@ class Orbiter {
     this.screens = {
       cdr_pfd2: "menu",
       cdr_sfd1: "gpc",
-      plt_pfd2: "start",
+      plt_pfd2: "menu",
     };
     this.imuData = {
       pitch: 0,
@@ -502,13 +457,20 @@ OV.rcsExtenderTanks.push(RCSExtE);
 
 
 
-
+//////////////////////
+// API ORBITER SIDE //
+//////////////////////
 
 
 app.get("/api/ov", (req, res) => {
   console.log("api/ov")
   res.json(OV);
 });
+
+
+
+
+// Landing Gear
 
 app.post("/api/ov/gearDown", (req, res) => {
   OV.gearController.release();
@@ -517,7 +479,7 @@ app.post("/api/ov/gearDown", (req, res) => {
 
 
 
-
+// OMS
 
 app.post("/api/ov/lOMS/arm", (req, res) => {
   OV.oms.l.enableArm();
@@ -536,6 +498,10 @@ app.post("/api/ov/rOMS/disarm", (req, res) => {
   res.json({ ok: true });
 })
 
+
+
+
+// Control Takeover
 
 app.post("/api/ov/takeOver", (req, res) => {
   console.log("aaa");
@@ -565,6 +531,9 @@ app.post("/api/ov/mergeControls", (req, res) => {
 })
 
 
+
+// Screens 
+
 app.post("/api/ov/cdr_pfd2", (req, res) => {
   const { tab } = req.body;
   console.log(tab)
@@ -572,6 +541,9 @@ app.post("/api/ov/cdr_pfd2", (req, res) => {
   res.json({ ok: true })
 })
 
+
+
+// Abort Modes
 
 app.post("/api/ov/abortMode/SE", (req, res) => {
   const { mode } = req.body;
@@ -589,23 +561,41 @@ app.post("/api/ov/abortMode/3E", (req, res) => {
 
 
 
-setInterval(() => {
+
+
+
+
+
+//////////////////////////////
+// API MISSION CONTROL SIDE //
+//////////////////////////////
+
+app.get("/api/mc/ov", (req, res) => {
+  res.json(OV);
+});
+
+
+
+
+
+
+///////////////////
+// SYSTEM RUNNER //
+///////////////////
+
+setInterval(() => { //SSME Handler
   OV.ssmeHandler.update();
 }, 50); // 20 Hz (matches your GPC / IMU rate)
 
-setInterval(() => {
+setInterval(() => { //ET Fuel Deplete
   if (OV) {
     OV.et.drain(OV.ssme.ctr, OV.ssme.l, OV.ssme.r);
   }
   //console.log(OV.et);
 }, 100)
 
-//window.telemetryDown = [];
-//setInterval(() => {
-//  telemetryDown.push(OV);
-//}, 1000)
 
-setInterval(() => {
+setInterval(() => {  // Not working right now, reworking physics and location system
   const telemetry = OV.mission.telemetryPos;
 
   // Compute current GPS position from telemetry
@@ -625,121 +615,17 @@ setInterval(() => {
 
 
 
-const navChannel = new BroadcastChannel("nav_rcv");
-setInterval(() => {
-  if (OV) {
-    navChannel.postMessage({ imu: OV.imuData, SSME: { l: OV.ssme.l, ctr: OV.ssme.ctr, r: OV.ssme.r }, SRB: { l: OV.SRBs.l, r: OV.SRBs.r }, OMS: { l: OV.oms.l, r: OV.oms.r }, et: OV.et, RCS: OV.rcsController, met: OV.mission.met });
-    //console.log({ imu: OV.imuData, SSME: { l: OV.ssme.l, ctr: OV.ssme.ctr, r: OV.ssme.r }, SRB: { l: OV.SRBs.l, r: OV.SRBs.r }, OMS: { l: OV.oms.l, r: OV.oms.r }, RCS: OV.rcsController });
-  }
-}, 100)
-const downlink = new BroadcastChannel("downlink");
-setInterval(() => {
-  if (OV) {
-    //console.log("a")
-    let OVdata = {
-      inAbort: OV.inAbort,
-      inIntactAbort: OV.inIntactAbort,
-      intactAbortMode: OV.intactAbortMode,
-      APUs: {
-        a: { apuTemp: OV.APUs.APUa.apuTemp, autoStartEnabble: OV.APUs.APUa.autoStartEnabble, fuelQty: OV.APUs.APUa.fuelQty, fuelPress: OV.APUs.APUa.fuelPress, fuelTemp: OV.APUs.APUa.fuelTemp, h2oQty: OV.APUs.APUa.h2oQty, h2oPress: OV.APUs.APUa.h2oPress, h2oTemp: OV.APUs.APUa.h2oTemp, oilQty: OV.APUs.APUa.oilQty, oilPress: OV.APUs.APUa.oilPress, oilTemp: OV.APUs.APUa.oilTemp, apuTemp: OV.APUs.APUa.apuTemp },
-        b: { apuTemp: OV.APUs.APUb.apuTemp, autoStartEnabble: OV.APUs.APUb.autoStartEnabble, fuelQty: OV.APUs.APUb.fuelQty, fuelPress: OV.APUs.APUb.fuelPress, fuelTemp: OV.APUs.APUb.fuelTemp, h2oQty: OV.APUs.APUb.h2oQty, h2oPress: OV.APUs.APUb.h2oPress, h2oTemp: OV.APUs.APUb.h2oTemp, oilQty: OV.APUs.APUb.oilQty, oilPress: OV.APUs.APUb.oilPress, oilTemp: OV.APUs.APUb.oilTemp, apuTemp: OV.APUs.APUb.apuTemp },
-        c: { apuTemp: OV.APUs.APUc.apuTemp, autoStartEnabble: OV.APUs.APUc.autoStartEnabble, fuelQty: OV.APUs.APUc.fuelQty, fuelPress: OV.APUs.APUc.fuelPress, fuelTemp: OV.APUs.APUc.fuelTemp, h2oQty: OV.APUs.APUc.h2oQty, h2oPress: OV.APUs.APUc.h2oPress, h2oTemp: OV.APUs.APUc.h2oTemp, oilQty: OV.APUs.APUc.oilQty, oilPress: OV.APUs.APUc.oilPress, oilTemp: OV.APUs.APUc.oilTemp, apuTemp: OV.APUs.APUc.apuTemp }
-      },
-      avionics: OV.avionics,
-      computers: {
-        clasComputer: {
-          armState: OV.computers.clasComputer.armState,
-          triggerState: OV.computers.clasComputer.triggerState,
-          failState: OV.computers.clasComputer.failState,
-          trim: OV.computers.clasComputer.trim
-        }
-      },
-      gear: {
-        fwd: { position: OV.gear.fwd.position, locked: OV.gear.fwd.locked },
-        l: { position: OV.gear.l.position, locked: OV.gear.l.locked },
-        r: { position: OV.gear.r.position, locked: OV.gear.r.locked }
-      },
-      imuData: {
-        pitch: OV.imuData.pitch,
-        roll: OV.imuData.roll,
-        yaw: OV.imuData.yaw,
-        pitchRate: OV.imuData.pitchRate,
-        rollRate: OV.imuData.rollRate,
-        yawRate: OV.imuData.yawRate
-      },
-      mission: {
-        met: OV.mission.met,
-        telemetryPos: {
-          V: OV.mission.telemetryPos.V,
-          alt_m: OV.mission.telemetryPos.alt_m,
-          downrange_m: OV.mission.telemetryPos.downrange_m,
-          mach: OV.mission.telemetryPos.mach
-        }
-      },
-      oms: {
-        l: { arm: OV.oms.l.arm, throttle: OV.oms.l.throttle },
-        r: { arm: OV.oms.r.arm, throttle: OV.oms.r.throttle }
-      },
-      parachutes: {
-        brake: { deployed: OV.parachutes.brake.deployed },
-        mainA: { deployed: OV.parachutes.mainA.deployed },
-        mainB: { deployed: OV.parachutes.mainB.deployed },
-        mainC: { deployed: OV.parachutes.mainC.deployed },
-        backUpA: { deployed: OV.parachutes.backUpA.deployed }
-      },
-      positionData: {
-        mode: "global",
-        x_accel: 0,
-        y_accel: 0,
-        z_accel: 0,
-        x_rate: 0,
-        y_rate: 0,
-        z_rate: 0,
-        downrange: 0,
-        altitude: 0,
-        crossrange: 0
-      },
-      radarAlt: {
-        mtr: OV.radarAlt.mtr,
-        ft: OV.radarAlt.ft
-      },
-      rcsController: OV.rcsController.pods,
-      rcsExtenderTanks: OV.rcsExtenderTanks,
-      software: {
-        pilotTakeover: OV.software.pilotTakeover,
-        missionMode: OV.software.missionMode
-      },
-      SRBs: {
-        l: { ignited: OV.SRBs.l.ignited, pos: OV.SRBs.l.pos, seperated: OV.SRBs.l.seperated },
-        r: { ignited: OV.SRBs.r.ignited, pos: OV.SRBs.r.pos, seperated: OV.SRBs.r.seperated }
-      },
-      ssme: {
-        l: { thrust: OV.ssme.l.thrust, targetThrust: OV.ssme.l.targetThrust, angx: OV.ssme.l.angx, angz: OV.ssme.l.angz },
-        ctr: { thrust: OV.ssme.ctr.thrust, targetThrust: OV.ssme.ctr.targetThrust, angx: OV.ssme.ctr.angx, angz: OV.ssme.ctr.angz },
-        r: { thrust: OV.ssme.r.thrust, targetThrust: OV.ssme.r.targetThrust, angx: OV.ssme.r.angx, angz: OV.ssme.r.angz }
-      },
-      et: {
-        lox: OV.et.lox,
-        lh2: OV.et.lh2,
-        loxTemp: OV.et.loxTemp,
-        lh2Temp: OV.et.lh2Temp,
-        loxPress: OV.et.loxPress,
-        lh2Press: OV.et.lh2Press,
-        jettisoned: OV.et.jettisoned
-      }
-    }
-    downlink.postMessage(OVdata);
-  }
-}, 50);
-console.log("hi")
-console.log(OV)
 
 
-const PORTA = 3000;
-const PORTB = 3001;
-app.listen(PORTA, () => {
-  console.log(`Server läuft auf http://0.0.0.0:${PORTA}`);
+
+
+/////////////////
+// SERVER INIT //
+/////////////////
+
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
-//app.listen(PORTB, '0.0.0.0', () => {
-//console.log(`Server läuft auf http://0.0.0.0:${PORTB}`);
-//})
+
+
