@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SES Cockpit Simulator</title>
+    <link href="https://fonts.cdnfonts.com/css/lcd" rel="stylesheet">
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/lcd');
+
+        body {
+            width: 5350px;
+            overflow: visible;
+        }
+
+        /*canvas {
+            font: 'LCD', sans-serif;
+        }*/
+
+        #front-base {
+            width: 5350px;
+            height: 2000px;
+            background-color: gray;
+            border: 1px solid white;
+        }
+
+        .front-base {
+            display: grid;
+            grid-template-columns: 2400px 550px 2400px;
+            grid-template-rows: auto;
+        }
+
+        #aft-base {
+            width: 2400px;
+            height: 900px;
+            background-color: gray;
+            border: 1px solid white;
+        }
+
+        .block {
+            border: 1px solid darkslategray;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 10px;
+            width: auto;
+            height: auto;
+        }
+
+        .module {
+            display: inline-block;
+            /* keep internal layout */
+            vertical-align: top;
+            /* helps alignment */
+            border-top: 1px solid white;
+            text-align: center;
+            color: white;
+            margin-left: 5px;
+            margin-right: 5px;
+            padding-left: 4px;
+            padding-right: 4px;
+            border-radius: 5px;
+        }
+
+        .screen {
+            width: auto;
+            height: auto;
+            background-color: black;
+            color: lightgreen;
+            font-family: Arial, sans-serif;
+        }
+
+        .touchscreen {
+            width: auto;
+            height: auto;
+            background-color: black;
+            color: lightgreen;
+            font-family: Arial, sans-serif;
+        }
+
+        .window {
+            width: auto;
+            height: auto;
+            background-color: skyblue;
+        }
+
+
+        .statusLight {
+            width: 50px;
+            height: 35px;
+            border: 1px solid black;
+            background: #222;
+            color: white;
+            font-family: monospace;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+
+        /* SPEZIELLER */
+
+
+
+        .cds-buttons {
+            display: flex;
+            /* arrange buttons in a row */
+            gap: 0px;
+            /* remove spacing between buttons */
+            margin: 0;
+            /* remove extra margins */
+            padding: 0;
+        }
+
+        .cds-button {
+            width: 85px;
+            height: 40px;
+            text-align: center;
+            font-size: 30px;
+            margin: 0;
+            /* remove default button margins */
+            padding: 0;
+        }
+
+        /* Schalter */
+        .linear-switch {
+            width: 40px;
+            /* smaller width for vertical orientation */
+            height: 95px;
+            /* taller for vertical */
+            border: 2px solid #333;
+            border-radius: 6px;
+            position: relative;
+            background: #eee;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .linear-switch.vertical {
+            /* no extra styling needed; vertical handled in JS */
+        }
+
+        .linear-switch .handle {
+            position: absolute;
+            left: 2px;
+            width: 36px;
+            height: 28px;
+            background: #333;
+            border-radius: 4px;
+            transition: top 0.2s;
+        }
+
+        .linear-switch .label {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-family: monospace;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+
+        /* Drehknöpfe */
+        .knob-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: inline-block;
+            margin: 20px;
+        }
+
+        .knob {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #333;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .knob::after {
+            content: "";
+            position: absolute;
+            width: 4px;
+            height: 30px;
+            background: #333;
+            top: 10px;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(var(--angle));
+        }
+
+        .knob-label {
+            position: absolute;
+            font-family: monospace;
+            font-size: 12px;
+            transform: translate(-50%, -50%);
+        }
+
+        /* SSME STATUS LIGHTS */
+        /* SSME MODULE LAYOUT */
+        .ssme-lights {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            justify-items: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        /* ENGINE STATUS LIGHTS */
+        .ssme-lights .l {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .ssme-lights .ctr {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .ssme-lights .r {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        /* SHUTDOWN ROW */
+        .ssme-lights .arm {
+            grid-column: 1;
+            grid-row: 3;
+        }
+
+        .ssme-lights .cut {
+            grid-column: 3;
+            grid-row: 3;
+        }
+
+
+
+
+
+        .joystick-wrapper {
+            display: flex;
+            gap: 40px;
+        }
+
+        .joystick-container {
+            width: 160px;
+            height: 160px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            background: #4da6ff;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #left-joystick-container .joystick-container {
+            width: 160px;
+            height: 160px;
+            background:
+                radial-gradient(circle at 30% 30%, #1c2538, #0a0f1c 70%);
+            border-radius: 50%;
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.06),
+                inset 0 -8px 16px rgba(0, 0, 0, 0.8),
+                0 10px 30px rgba(0, 0, 0, 0.9);
+            touch-action: none;
+        }
+
+        #left-joystick .joystick-stick {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffd28a, #b87a2b);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.25),
+                inset 0 -6px 10px rgba(0, 0, 0, 0.5),
+                0 0 18px rgba(255, 180, 80, 0.35);
+        }
+
+        #right-joystick-container .joystick-container {
+            width: 160px;
+            height: 160px;
+            background:
+                radial-gradient(circle at 30% 30%, #1c2538, #0a0f1c 70%);
+            border-radius: 50%;
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.06),
+                inset 0 -8px 16px rgba(0, 0, 0, 0.8),
+                0 10px 30px rgba(0, 0, 0, 0.9);
+            touch-action: none;
+        }
+
+        #right-joystick .joystick-stick {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffd28a, #b87a2b);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.25),
+                inset 0 -6px 10px rgba(0, 0, 0, 0.5),
+                0 0 18px rgba(255, 180, 80, 0.35);
+        }
+
+        #aft-joystick-container .joystick-container {
+            width: 160px;
+            height: 160px;
+            background:
+                radial-gradient(circle at 30% 30%, #1c2538, #0a0f1c 70%);
+            border-radius: 50%;
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.06),
+                inset 0 -8px 16px rgba(0, 0, 0, 0.8),
+                0 10px 30px rgba(0, 0, 0, 0.9);
+            touch-action: none;
+        }
+
+        #aft-joystick .joystick-stick {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffd28a, #b87a2b);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 255, 255, 0.25),
+                inset 0 -6px 10px rgba(0, 0, 0, 0.5),
+                0 0 18px rgba(255, 180, 80, 0.35);
+        }
+
+        .rudder-pedal {
+            transform: scale(1.5);
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <script>let passCode = "";</script>
+    <!--<script type="module" src="orbiter.js"></script>
+    <script type="module" src="dataimport.js"></script>-->
+    <!--<button onclick="OV.computers.programHandler.exec('a', OV.computers.gpc3)">TEST</button>-->
+    <div id="front-base" class="front-base">
+        <div id="plt-side">
+
+
+
+            <div id="plt-windows-front" class="block">
+                <canvas id="plt-front-window1" class="window"
+                    style="width: 800px; height: 400px; margin: 100px; margin-right: 500px; margin-bottom: 200px;margin-left: auto;"></canvas>
+            </div>
+            <div style="display: flex; flex-direction: row;">
+                <div id="plt-middle-left-screen-group" class="block" style="margin-left: auto;">
+                    <canvas id="plt-pfd-1" class="touchscreen"
+                        style="width: 900px; height: 600px; margin: 20px;"></canvas>
+
+                </div>
+                <div id="plt-middle-right-screen-group" class="block">
+                    <div class="module">
+                        <canvas id="plt-pfd-2" class="touchscreen"
+                            style="height: 600px;width: 400px; margin: 20px;"></canvas>
+                    </div>
+                    <div class="module" style="display: flex; flex-direction: column;">
+                        <canvas id="plt-sfd-1" class="touchscreen"
+                            style="height: 280px; width: 400px; margin: 20px;"></canvas>
+                        <canvas id="plt-sfd-2" class="touchscreen"
+                            style="height: 280px; width: 400px; margin: 20px;"></canvas>
+                    </div>
+
+
+                </div>
+            </div>
+            <div id="left-sidestick-block" class="block">
+                <div id="left-sidestick-module" class="module" style="margin-right: auto; display: flex;">
+                    <!-- Left Sidestick Joystick -->
+                    <div id="left-joystick-container" class="joystick-wrapper"
+                        style="justify-content: center; margin-top: 20px;">
+                        <div id="left-joystick" class="joystick-container"></div>
+                    </div>
+                    <div id="pltpilotTakeOver" class="statusLight" onclick="takeOver()">
+                        TKEOVR</div>
+                </div>
+            </div>
+
+
+
+        </div>
+        <div id="ctr-stack" style="width: 550px;">
+
+            <div class="block" style="height: 600px;"></div>
+
+
+
+
+            <div id="central-button-console" class="block">
+                <div>
+                    <div id="clasSTATE" class="module">
+                        CLAS
+                        <div class="linear-switch vertical" data-labels="ARM,OFF"></div>
+                        <div id="clasSTATElight" class="statusLight">[TRIG]</div>
+                    </div>
+                    <div id="omsARMstateSWITCHES" class="module">
+                        L OMS R
+                        <div class="oms-arm-switches"
+                            style="display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto;">
+                            <div id="omsl" style="align-items: center;">
+                                <div class="linear-switch vertical" data-labels="ARM,OFF"></div>
+                            </div>
+                            <div id="omsr" style="align-items: center;">
+                                <div class="linear-switch vertical" data-labels="ARM,OFF"></div>
+                            </div>
+                            <div id="omsLarmlight" class="statusLight">[ARM]</div>
+                            <div id="omsRarmlight" class="statusLight">[ARM]</div>
+                        </div>
+                    </div>
+                    <div id="ssmeSTATEandSHTDN" class="module">
+                        MAIN ENGINES
+
+                        <div class="ssme-lights">
+                            <div class="statusLight l" onclick="OV.ssmeHandler.l.shutDown()">L</div>
+                            <div class="statusLight ctr" onclick="OV.ssmeHandler.ctr.shutDown()">CTR</div>
+                            <div class="statusLight r" onclick="OV.ssmeHandler.r.shutDown()">R</div>
+
+                            <div class="statusLight arm">ARM</div>
+                            <div class="statusLight cut" onclick="OV.ssmeHandler.shutDown()">CUT</div>
+                        </div>
+                    </div>
+                    <div id="srbMANAUTOandSEP" class="module">
+                        SRB
+                        <div class="linear-switch vertical" data-labels="MAN/AUTO,AUTO"></div>
+                        <div id="srbJET" class="statusLight"
+                            onclick="if(srbSepMode == 'man'){OV.srbHandler.seperate()}">SEP</div>
+                    </div>
+                    <div id="etMANAUTOandSEP" class="module">
+                        ET
+                        <div class="linear-switch vertical" data-labels="MAN,AUTO"></div>
+                        <div id="etJET" class="statusLight" onclick="if(etSepMode){OV.et.seperate()}">SEP</div>
+                    </div>
+                </div>
+                <!--GEAR STATUS LIGHTS, SWITCH UP/RELEASE; BRAKE CHUTE DEPLOY, CUT; CLAS ABORT; CLAS ABORT PARACHUTE SYSTEM-->
+                <div>
+                    <div id="gear" class="module">
+                        GEAR
+                        <div class="gearStatusLights">
+                            <div id="LgearSTATUS" class="statusLight">DN</div>
+                        </div>
+                        <div class="linear-switch vertical" data-labels="UP,RELEASE"></div>
+
+                    </div>
+                    <div id="runway-chute" class="module">
+                        <br>
+                        <div id="runway-chute-deploy" class="statusLight">CHUTE DEPL</div>
+                        <br>
+                        <div id="runway-chute-jettison" class="statusLight">CHUTE JET</div>
+                    </div>
+                    <div id="clasAbortButtonModule" class="module">
+                        <br>
+                        <button id="CLASabortButton"
+                            style="width: 140px; height: 140px; border-radius: 70px; color: white; font-size: xx-large; background-color: red;"
+                            onclick="OV.computers.programHandler.exec('abort', OV.computers.gpc1)">ABORT</button>
+                    </div>
+                    <div id="clasParachuteControls" class="module">
+                        PARACHUTES
+                        <div
+                            style="display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto auto;">
+                            <div id="clasMainChuteDeploy" class="statusLight"
+                                onclick="OV.parachutes.mainA.deploy();OV.parachutes.mainB.deploy();OV.parachutes.mainC.deploy();">
+                                MAIN DEP</div>
+                            <div id="clasBrakeChuteDeploy" class="statusLight" onclick="OV.parachutes.brake.deploy();">
+                                BRAKE DEP</div>
+                            <div id="clasMainChuteCut" class="statusLight"
+                                onclick="OV.parachutes.mainA.cut();OV.parachutes.mainB.cut();OV.parachutes.mainC.cut();">
+                                MAIN CUT</div>
+                            <div id="clasBrakeChuteJettison" class="statusLight" onclick="OV.parachutes.brake.cut();">
+                                BRAKE JET</div>
+                            <div id="clasBackUpChuteDeploy" class="statusLight"
+                                onclick="OV.parachutes.backUpA.deploy();">BACKUP DEP</div>
+                            <div id="clasBackUpChuteJettison" class="statusLight"
+                                onclick="OV.parachutes.backUpA.cut();">BACKUP JET</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            <div id="central-data-screen-block" class="block">
+                <canvas id="central-data-screen" class="screen" style="width: 510px;height: 320px;margin: 18px;">
+                </canvas>
+                <div class="cds-buttons" style="transform: translate(18px, -28px);">
+                    <button class="cds-button" id="cds1">^</button>
+                    <button class="cds-button" id="cds2">^</button>
+                    <button class="cds-button" id="cds3">^</button>
+                    <button class="cds-button" id="cds4">^</button>
+                    <button class="cds-button" id="cds5">^</button>
+                    <button class="cds-button" id="cds6">^</button>
+                </div>
+            </div>
+            <div id="dpc-interface-block" class="block">
+                <div class="module">
+                    DPC INTERFACE
+                    <div id="dpc-interface" class="block">
+                        <div class="module" style="display: flex; flex-direction: column;">
+                            GPC FAULT RESET
+                            <button onclick="OV.computers.gpc1.fault = false">GPC1</button>
+                            <button onclick="OV.computers.gpc2.fault = false">GPC2</button>
+                            <button onclick="OV.computers.gpc3.fault = false">GPC3</button>
+                            <button onclick="OV.computers.gpc4.fault = false">GPC4</button>
+                            <button onclick="OV.computers.gpc5.fault = false">GPC5</button>
+                        </div>
+                        <div class="module" style="display: flex; flex-direction: column;">
+                            ABORT RESET<br>
+                            CLAS
+                            <button onclick="OV.computers.clasComputer.failState = false">CLAS FAIL RESET</button>
+                            IN ABORT
+                            <button onclick="OV.inAbort = false">IN CLAS ABORT RESET</button>
+                            <button onclick="OV.inIntactAbort = false">IN INTACT ABORT RESET</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="module"
+                    style="display: grid; grid-template-columns: 40px 40px 40px; grid-template-rows: 40px 40px 40px 40px;">
+                    <button onclick="passCode += '1'">1</button>
+                    <button onclick="passCode += '2'">2</button>
+                    <button onclick="passCode += '3'">3</button>
+                    <button onclick="passCode += '4'">4</button>
+                    <button onclick="passCode += '5'">5</button>
+                    <button onclick="passCode += '6'">6</button>
+                    <button onclick="passCode += '7'">7</button>
+                    <button onclick="passCode += '8'">8</button>
+                    <button onclick="passCode += '9'">9</button>
+                    <button onclick="passCode = ''" type="reset">❌</button>
+                    <button onclick="passCode += '0'">0</button>
+                    <button onclick="checkPassCode();" type="submit">✅</button>
+                </div>
+            </div>
+        </div>
+        <div id="cdr-side">
+
+
+
+
+
+            <div id="cdr-windows-front" class="block">
+                <canvas id="cdr-front-window1" class="window"
+                    style="width: 800px; height: 400px; margin: 100px; margin-left: 500px; margin-bottom: 200px;"></canvas>
+            </div>
+            <div style="display: flex; flex-direction: row;">
+                <div id="cdr-middle-left-screen-group" class="block">
+                    <div class="module" style="display: flex; flex-direction: column;">
+                        <canvas id="cdr-sfd-1" class="touchscreen"
+                            style="height: 280px; width: 400px; margin: 20px;"></canvas>
+                        <canvas id="cdr-sfd-2" class="touchscreen"
+                            style="height: 280px; width: 400px; margin: 20px;"></canvas>
+                    </div>
+                    <div class="module">
+                        <canvas id="cdr-pfd-2" class="touchscreen"
+                            style="height: 600px;width: 400px; margin: 20px;"></canvas>
+                    </div>
+
+                </div>
+                <div id="cdr-middle-right-screen-group" class="block">
+                    <canvas id="cdr-pfd-1" class="touchscreen"
+                        style="width: 900px; height: 600px; margin: 20px;"></canvas>
+                    <div class="module">
+                        ABORT MODES
+                        <div style="display: flex;flex-direction: row;">
+                            <div id="abortButton" class="statusLight" onclick="OV.inIntactAbort = true;">ABORT</div>
+                            <div class="knob-container">
+                                <div class="knob" data-labels="RTLS,OFF,TAL,ATO"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="right-sidestick-block" class="block">
+                <div id="right-sidestick-module" class="module" style="margin-left: auto;display: flex;">
+                    <div id="cdrpilotTakeOver" class="statusLight" onclick="takeOver()">
+                        TKEOVR</div>
+                    <!-- Right Sidestick Joystick -->
+                    <div id="right-joystick-container" class="joystick-wrapper"
+                        style="justify-content: center; margin-top: 20px;">
+                        <div id="right-joystick" class="joystick-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--<input type="range" class="rudder-pedal" name="plt-rudder-pedal" id="pltrudder-pedal" min="-100" max="100" value="0">-->
+
+
+
+
+
+
+    <br>
+
+
+    AFT FLIGHT DECK
+
+    <br>
+
+    <div id="aft-base" class="aft-base">
+        <div id="aft-right-side" class="block"></div>
+
+
+
+
+
+
+        <div id="aft-joystick-container" class="joystick-wrapper" style="justify-content: center; margin-top: 20px;">
+            <div id="aft-joystick" class="joystick-container"></div>
+        </div>
+    </div>
+
+
+
+
+    <br>
+    DEMONSTRATION
+    <br>
+
+
+    <br>
+
+    <div class="knob-container">
+        <div class="knob" data-labels="LOW,MED,HIGH"></div>
+    </div>
+
+
+
+    <!--<div class="joystick-wrapper">
+        <div id="move-joystick" class="joystick-container"></div>
+        <div id="rotate-joystick" class="joystick-container"></div>
+    </div>-->
+
+
+
+
+    LINEAR
+    <br>
+    <div class="linear-switch vertical" data-labels="ARM,OFF"></div>
+    <br>
+    <div class="linear-switch vertical" data-labels="LOW,MID,HIGH"></div>
+
+
+
+    <br>
+    <br>
+    Telemetry
+    <button onclick="debugA()">TELEMETRY OUT</button><br>
+    <p id="debugOutput"></p>
+
+
+    <script src="cockpit.js"></script>
+    <script type="module" src="cds.js"></script>
+    <script type="module" src="cdr-pfd1.js"></script>
+    <script type="module" src="plt-pfd1.js"></script>
+    <script type="module" src="cdr-pfd2.js"></script>
+    <script type="module" src="plt-pfd2.js"></script>
+    <script type="module" src="cdr-sfd1.js"></script>
+
+
+
+
+    <!--<script src="joystickHandler.js"></script>-->
+
+
+
+
+
+    <script>
+        function checkPassCode() {
+            if (passCode === "19739628") {
+                alert("correct")
+            } else {
+                alert("wrong")
+            }
+        }
+
+        // DREHKNÖPFE
+
+        document.querySelectorAll(".knob-container").forEach(container => {
+            const knob = container.querySelector(".knob");
+            const labels = knob.dataset.labels.split(",");
+            const max = labels.length - 1;
+            let pos = 0;
+            knob.dataset.pos = pos;
+
+            const radius = 60; // distance from knob center to label
+
+            // Remove previous labels if any
+            container.querySelectorAll(".knob-label").forEach(el => el.remove());
+
+            // Create labels around the knob
+            labels.forEach((text, i) => {
+                const angle = (-135 + (270 * i / max)) * Math.PI / 180 - Math.PI / 2;
+                const x = 50 + radius * Math.cos(angle);
+                const y = 50 + radius * Math.sin(angle);
+
+                const labelEl = document.createElement("div");
+                labelEl.className = "knob-label";
+                labelEl.style.left = x + "px";
+                labelEl.style.top = y + "px";
+                labelEl.textContent = text;
+                container.appendChild(labelEl);
+            });
+
+            const update = () => {
+                const angleMin = -135;
+                const angleMax = 135;
+                const angle = angleMin + (angleMax - angleMin) * (pos / max);
+                knob.style.setProperty("--angle", angle + "deg");
+            };
+
+            update();
+
+            knob.addEventListener("contextmenu", e => e.preventDefault());
+
+            knob.addEventListener("mousedown", e => {
+                if (e.button === 2 && pos > 0) pos--;       // left click → left
+                if (e.button === 0 && pos < max) pos++;    // right click → right
+                update();
+            });
+        });
+
+
+
+
+
+        // SCHALTER
+
+        document.querySelectorAll(".linear-switch").forEach(switchEl => {
+            const labels = switchEl.dataset.labels.split(",");
+            const max = labels.length - 1;
+            let pos = 0;
+            switchEl.dataset.pos = pos;
+
+            // Create handle
+            const handle = document.createElement("div");
+            handle.className = "handle";
+            switchEl.appendChild(handle);
+
+            // Create labels
+            const labelEls = [];
+            labels.forEach((text, i) => {
+                const lbl = document.createElement("div");
+                lbl.className = "label";
+                lbl.textContent = text;
+                switchEl.appendChild(lbl);
+                labelEls.push(lbl);
+            });
+
+            const update = () => {
+                const vertical = switchEl.classList.contains("vertical");
+
+                // Use handle size in step calculation to keep handle inside container
+                const step = vertical
+                    ? (switchEl.clientHeight - handle.clientHeight) / max
+                    : (switchEl.clientWidth - handle.clientWidth) / max;
+
+                // Clamp pos to 0..max
+                pos = Math.max(0, Math.min(pos, max));
+                switchEl.dataset.pos = pos;
+
+                // Position handle
+                if (vertical) handle.style.top = (step * pos) + "px";
+                else handle.style.left = (step * pos) + "px";
+
+                // Position labels evenly along the axis
+                labels.forEach((_, i) => {
+                    if (vertical) {
+                        labelEls[i].style.top = (step * i + handle.clientHeight / 2) + "px";
+                        labelEls[i].style.left = "50%";
+                        labelEls[i].style.transform = "translate(-50%, -50%)";
+                    } else {
+                        labelEls[i].style.left = (step * i + handle.clientWidth / 2) + "px";
+                        labelEls[i].style.top = "50%";
+                        labelEls[i].style.transform = "translate(-50%, -50%)";
+                    }
+                });
+                switchEl.dispatchEvent(new CustomEvent("change", {
+                    detail: {
+                        pos: pos,
+                        label: labels[pos]
+                    }
+                }));
+            };
+
+            update();
+
+            // Click to move handle
+            switchEl.addEventListener("mousedown", e => {
+                const rect = switchEl.getBoundingClientRect();
+                const vertical = switchEl.classList.contains("vertical");
+                const clickPos = vertical ? e.clientY - rect.top : e.clientX - rect.left;
+                const handlePos = vertical ? handle.offsetTop : handle.offsetLeft;
+
+                if (clickPos < handlePos && pos > 0) pos--;
+                else if (clickPos > handlePos && pos < max) pos++;
+
+                update();
+            });
+
+
+        });
+
+
+
+
+
+
+
+
+
+
+        // FUNCTIONS ON SYSTEM
+
+
+
+
+
+        //CLAS ARM SWITCH
+
+        const clasSwitch = document.querySelector("#clasSTATE .linear-switch");
+
+        clasSwitch.addEventListener("change", e => {
+            console.log("CLAS switch changed:", e.detail.label);
+
+            // Example: trigger a function
+            if (e.detail.label === "ARM") {
+                armClasSystem();
+            } else if (e.detail.label === "OFF") {
+                shutdownClasSystem();
+            }
+        });
+
+        function armClasSystem() {
+            document.getElementById("clasSTATElight").style.color = "orange";
+            document.getElementById("clasSTATElight").innerHTML = "[ARM]";
+            OV.computers.clasComputer.armState = true;
+        }
+
+        function shutdownClasSystem() {
+            document.getElementById("clasSTATElight").style.color = "black";
+            document.getElementById("clasSTATElight").innerHTML = "";
+            OV.computers.clasComputer.armState = false;
+        }
+
+
+
+        //setTimeout(() => {
+        //    OV.computers.programHandler.exec("abort", OV.computers.gpc1)
+        //}, 25000)
+
+        // Landing Gear Switch
+
+        const landingGearSwitch = document.querySelector("#gear .linear-switch");
+
+        landingGearSwitch.addEventListener("change", e => {
+            //console.log("CLAS switch changed:", e.detail.label);
+
+            // Example: trigger a function
+            if (e.detail.label === "UP") {
+                //armClasSystem();
+            } else if (e.detail.label === "RELEASE") {
+                (async () => {
+                    const resp = await fetch("/api/ov/gearDown", {
+                        method: "POST"
+                    });
+
+                    if (!resp.ok) return alert("Gear Down Failed");
+                })();
+            }
+        });
+
+        // OMS Switches
+
+        const omsL = document.querySelector("#omsl .linear-switch");
+        const omsR = document.querySelector("#omsr .linear-switch");
+
+        omsL.addEventListener("change", async e => {
+            //console.log("CLAS switch changed:", e.detail.label);
+
+            // Example: trigger a function
+            if (e.detail.label === "ARM") {
+                (async () => {
+                    const resp = await fetch("/api/ov/lOMS/arm", {
+                        method: "POST"
+                    });
+                })
+            } else if (e.detail.label === "OFF") {
+                (async () => {
+                    const resp = await fetch("/api/ov/lOMS/disarm", {
+                        method: "POST"
+                    });
+                })
+            }
+        });
+
+        omsR.addEventListener("change", e => {
+            //console.log("CLAS switch changed:", e.detail.label);
+
+            // Example: trigger a function
+            if (e.detail.label === "ARM") {
+                (async () => {
+                    const resp = await fetch("/api/ov/rOMS/arm", {
+                        method: "POST"
+                    });
+                })
+            } else if (e.detail.label === "OFF") {
+                (async () => {
+                    const resp = await fetch("/api/ov/rOMS/disarm", {
+                        method: "POST"
+                    });
+                })
+            }
+        });
+
+
+        // SRB/ET SEP
+        let srbSepMode = "auto";
+        let etSepMode;
+
+
+        const srbSepSwitch = document.querySelector("#srbMANAUTOandSEP .linear-switch");
+        const etSepSwitch = document.querySelector("#etMANAUTOandSEP .linear-switch");
+
+        srbSepSwitch.addEventListener("change", e => {
+            //console.log("CLAS switch changed:", e.detail.label);
+
+            // Example: trigger a function
+            if (e.detail.label === "MAN/AUTO") {
+                srbSepMode = "man";
+            } else if (e.detail.label === "AUTO") {
+                srbSepMode = "auto";
+            }
+        });
+
+        etSepSwitch.addEventListener("change", e => {
+            //console.log("CLAS switch changed:", e.detail.label);
+
+            // Example: trigger a function
+            if (e.detail.label === "MAN") {
+                etSepMode = "man";
+            } else if (e.detail.label === "AUTO") {
+                etSepMode = "auto";
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //////////////////////
+        // Vehicle Graphics //
+        //////////////////////
+
+        // CDR Window front
+
+        const cdr_window = document.getElementById("cdr-front-window1");
+        const cdr_window_ctx = cdr_window.getContext("2d");
+
+        cdr_window_ctx.beginPath();
+        cdr_window_ctx.moveTo(0, 0);
+        cdr_window_ctx.lineTo(50, 0);
+        cdr_window_ctx.lineTo(0, 100);
+        cdr_window_ctx.lineTo(0, 0);
+        cdr_window_ctx.fillStyle = "gray";
+        cdr_window_ctx.fill();
+
+        cdr_window_ctx.beginPath();
+        cdr_window_ctx.moveTo(0, 150);
+        cdr_window_ctx.lineTo(0, 100);
+        cdr_window_ctx.lineTo(100, 150);
+        cdr_window_ctx.lineTo(0, 150);
+        cdr_window_ctx.fillStyle = "gray";
+        cdr_window_ctx.fill();
+
+        cdr_window_ctx.beginPath();
+        cdr_window_ctx.moveTo(300, 0);
+        cdr_window_ctx.lineTo(50, 0);
+        cdr_window_ctx.lineTo(300, 125);
+        cdr_window_ctx.lineTo(300, 0);
+        cdr_window_ctx.fillStyle = "gray";
+        cdr_window_ctx.fill();
+
+        cdr_window_ctx.beginPath();
+        cdr_window_ctx.moveTo(300, 150);
+        cdr_window_ctx.lineTo(300, 100);
+        cdr_window_ctx.lineTo(275, 150);
+        cdr_window_ctx.lineTo(300, 150);
+        cdr_window_ctx.fillStyle = "gray";
+        cdr_window_ctx.fill();
+
+
+
+
+
+        setInterval(() => {
+            if (OV.gearController.l.position == "extended" && OV.gearController.l.locked && OV.gearController.r.position == "extended" && OV.gearController.r.locked && OV.gearController.fwd.position == "extended" && OV.gearController.fwd.locked) {
+                document.getElementById("LgearSTATUS").style.backgroundColor = "green";
+            } else {
+                document.getElementById("LgearSTATUS").style.backgroundColor = "black";
+            }
+        }, 3500)
+
+
+        function debugA() {
+            if (telemetryDown.length === 0) return;
+
+            let txt = "";
+
+            for (const frame of telemetryDown) {
+                txt += `<pre>${JSON.stringify(frame, null, 2)}</pre>`;
+            }
+
+            document.getElementById("debugOutput").innerHTML = txt;
+        }
+
+
+
+        function takeOver() {
+            if (!OV.software.pilotTakeover) {
+                (async () => {
+                    const resp = await fetch("/api/ov/takeOver", {
+                        method: "POST"
+                    });
+                    if (!resp.ok) return alert("ddd");
+                })();
+            } else {
+                (async () => {
+                    const resp = await fetch("/api/ov/takeOverReset", {
+                        method: "POST"
+                    });
+                    if (!resp.ok) return alert("eee");
+                })();
+            }
+        }
+
+
+
+        function buttonStateUpdate() {
+            if (OV != null) {
+                /*if (
+                    OV.parachutes.brake.deployed
+                ) {
+                    document.getElementById("clasBrakeChuteDeploy").style.backgroundColor = "green";
+                }*/
+                if (
+                    OV.parachutes.mainA.deployed &&
+                    OV.parachutes.mainB.deployed &&
+                    OV.parachutes.mainC.deployed
+                ) {
+                    document.getElementById("clasMainChuteDeploy").style.backgroundColor = "green";
+                } else if (
+                    OV.parachutes.mainA.deployed && OV.parachutes.mainB.deployed ||
+                    OV.parachutes.mainA.deployed && OV.parachutes.mainC.deployed ||
+                    OV.parachutes.mainB.deployed && OV.parachutes.mainC.deployed
+                ) {
+                    document.getElementById("clasMainChuteDeploy").style.backgroundColor = "yellow";
+                } else if (
+                    OV.parachutes.mainA.deployed ||
+                    OV.parachutes.mainB.deployed ||
+                    OV.parachutes.mainC.deployed
+                ) {
+                    document.getElementById("clasMainChuteDeploy").style.backgroundColor = "red";
+                }
+                if (OV.parachutes.backUpA.deployed) {
+                    document.getElementById("clasBackUpChuteDeploy").style.backgroundColor = "green";
+                }
+
+
+
+                if (OV.oms.l.arm) {
+                    document.getElementById("omsLarmlight").style.color = "yellow";
+                    document.getElementById("omsLarmlight").innerHTML = "[ARM]";
+                } else {
+                    document.getElementById("omsLarmlight").innerHTML = "";
+                }
+                if (OV.oms.r.arm) {
+                    document.getElementById("omsRarmlight").style.color = "yellow";
+                    document.getElementById("omsRarmlight").innerHTML = "[ARM]";
+                } else {
+                    document.getElementById("omsRarmlight").innerHTML = "";
+                }
+
+                if (OV.software.pilotTakeover) {
+                    document.getElementById('cdrpilotTakeOver').style.backgroundColor = 'green';
+                    document.getElementById('pltpilotTakeOver').style.backgroundColor = 'green';
+                } else {
+                    document.getElementById('cdrpilotTakeOver').style.backgroundColor = '#222';
+                    document.getElementById('pltpilotTakeOver').style.backgroundColor = '#222';
+                }
+            }
+        }
+
+        setTimeout(() => { setInterval(buttonStateUpdate, 100) }, 1000);
+
+
+    </script>
+
+
+
+
+</body>
+
+</html>

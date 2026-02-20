@@ -1,0 +1,229 @@
+{
+  "pages": {
+    "PAGE1": {
+      "title": "BEFORE GO AT T/U",
+      "lines": [
+        "SEATS - LOCKED",
+        "INERTIA REELS - LOCK",
+        "HARNESS - SECURE",
+        "COMM CHECK",
+        "C/W SYSTEM - TEST",
+        "GPC MAJOR MODE 101",
+        "DISPLAYS - ASCENT",
+        "CABIN CONFIG - VERIFY"
+      ],
+      "bottomButtons": {
+        "cds1": "ASCENT",
+        "cds2": "ABORTS",
+        "cds3": "ORBIT",
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "ASCENT": {
+      "title": "ASCENT",
+      "lines": [
+        "SRB IGNITION",
+        "LIFTOFF",
+        "ROLL PROGRAM",
+        "THROTTLE DN",
+        "MAX Q",
+        "THROTTLE UP",
+        "SRB SEP",
+        "NEGATIVE RETURN",
+        "SINGLE ENG OPS",
+        "MECO",
+        "ET SEP",
+        "OMS-1 COMPLETE"
+      ],
+      "bottomButtons": {
+        "cds1": "PAGE1",
+        "cds2": "ABORTS",
+        "cds3": "OMS",
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "ABORTS": {
+      "title": "ASCENT ABORTS",
+      "lines": [
+        "RTLS AVAILABLE",
+        "TAL AVAILABLE",
+        "ATO AVAILABLE",
+        "AOA AVAILABLE",
+        "ENG FAIL - MONITOR",
+        "GNC - AUTO",
+        "DPS - CONFIG"
+      ],
+      "bottomButtons": {
+        "cds1": "RTLS",
+        "cds2": "TAL",
+        "cds3": "ATO",
+        "cds4": "AOA",
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "RTLS": {
+      "title": "RTLS",
+      "lines": [
+        "NEGATIVE RETURN",
+        "PITCH AROUND",
+        "ET SEP",
+        "DUMP MPS",
+        "ENTRY CONFIG",
+        "HAC ACQ",
+        "LAND KSC"
+      ],
+      "bottomButtons": {
+        "cds1": "ABORTS",
+        "cds2": null,
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "TAL": {
+      "title": "TAL",
+      "lines": [
+        "PRESS TO MECO",
+        "ET SEP",
+        "OMS ASSIST",
+        "ENTRY CONFIG",
+        "NAV - UPDATE",
+        "LAND SITE - PRIME"
+      ],
+      "bottomButtons": {
+        "cds1": "ABORTS",
+        "cds2": null,
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "ATO": {
+      "title": "ATO",
+      "lines": [
+        "PRESS TO ORBIT",
+        "MECO",
+        "ET SEP",
+        "OMS-1",
+        "OMS-2",
+        "ORBIT OPS"
+      ],
+      "bottomButtons": {
+        "cds1": "ABORTS",
+        "cds2": "ORBIT",
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "AOA": {
+      "title": "AOA",
+      "lines": [
+        "MECO EARLY",
+        "OMS BURN",
+        "DEORBIT PREP",
+        "ENTRY CONFIG",
+        "LAND NEXT ORBIT"
+      ],
+      "bottomButtons": {
+        "cds1": "ABORTS",
+        "cds2": null,
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "OMS": {
+      "title": "OMS BURNS",
+      "lines": [
+        "OMS-1 COMPLETE",
+        "TRAJ CHECK",
+        "OMS-2 GO",
+        "INSERTION CONFIRM"
+      ],
+      "bottomButtons": {
+        "cds1": "ASCENT",
+        "cds2": "ORBIT",
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "ORBIT": {
+      "title": "ON ORBIT",
+      "lines": [
+        "OPS 3",
+        "PAYLOAD BAY DOORS - OPEN",
+        "RADIATORS - DEPLOY",
+        "KU BAND - CONFIG",
+        "ATTITUDE - FREE DRIFT"
+      ],
+      "bottomButtons": {
+        "cds1": "DEORBIT",
+        "cds2": "ASCENT",
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "DEORBIT": {
+      "title": "DEORBIT PREP",
+      "lines": [
+        "OPS 304",
+        "CABIN STOW",
+        "SEATS - CONFIG",
+        "GPC - ENTRY",
+        "DEORBIT BURN"
+      ],
+      "bottomButtons": {
+        "cds1": "ENTRY",
+        "cds2": "ORBIT",
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    },
+
+    "ENTRY": {
+      "title": "ENTRY / LAND",
+      "lines": [
+        "EI",
+        "ROLL REVERSALS",
+        "TAEM",
+        "HAC",
+        "GEAR - DOWN",
+        "DRAG CHUTE - DEPLOY",
+        "WHEELS STOP"
+      ],
+      "bottomButtons": {
+        "cds1": "PAGE1",
+        "cds2": null,
+        "cds3": null,
+        "cds4": null,
+        "cds5": "SCROLL_UP",
+        "cds6": "SCROLL_DOWN"
+      }
+    }
+  }
+}
