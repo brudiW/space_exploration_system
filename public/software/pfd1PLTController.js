@@ -192,9 +192,9 @@ export class PFD1PLTController {
 
         // HUD overlays (could also be made configurable)
         this.screen.addText(Math.round(Number(yaw)), 450, 10);
-        this.screen.addText("P: " + Math.round(Number(OV.imuData.pitch)*10)/10, 750, 12)
-        this.screen.addText("R: " + Math.round(Number(OV.imuData.roll)*10)/10, 750, 28)
-        this.screen.addText("Y: " + Math.round(Number(OV.imuData.yaw)*10)/10, 750, 44)
+        this.screen.addText("P: " + Math.round(Number(OV.IMU.pitch)*10)/10, 750, 12)
+        this.screen.addText("R: " + Math.round(Number(OV.IMU.roll)*10)/10, 750, 28)
+        this.screen.addText("Y: " + Math.round(Number(OV.IMU.yaw)*10)/10, 750, 44)
         this.screen.addLine("lime", 800, 0, 800, 120);
         this.screen.addLine("lime", 800, 40, 900, 40);
         this.screen.addLine("lime", 800, 80, 900, 80);
@@ -265,9 +265,9 @@ export class PFD1PLTController {
     update() {
         if (!this.orbiter) return;
         this.drawArtificialHorizon(
-            this.orbiter.imuData.pitch,
-            this.orbiter.imuData.roll,
-            this.orbiter.imuData.yaw
+            this.orbiter.IMU.pitch,
+            this.orbiter.IMU.roll,
+            this.orbiter.IMU.yaw
         );
         this.addListedGraphics();
 
