@@ -2,10 +2,9 @@ let OV = {};
 async function loadOV() {
     const resp = await fetch("/api/ov");
     OV = await resp.json();
+    requestAnimationFrame(loadOV)
 }
-setInterval(() => {
-    loadOV();
-}, 100);
+loadOV();
 let screens = {
     cdr_pfd1: null,
     cdr_pfd2: null,
