@@ -1,11 +1,12 @@
 export class FlightTerminationSystem {
     constructor() {
         this.activated = false;
-        this.fts_channel = new BroadcastChannel("FTS Uplink");
+        
         this.terminationSequencer()
     }
     terminationSequencer() {
-        this.fts_channel.onmessage = (e) => {
+        const fts_channel = new BroadcastChannel("FTS Uplink");
+        fts_channel.onmessage = (e) => {
             const d = e.data;
             if (d[0] == "terminateConfirm") {
                 this.terminate(d[1]);
