@@ -1,5 +1,15 @@
 export class maneuverHandler {
-    constructor() { }
+    constructor(ov = null) {
+        Object.defineProperty(this, 'OV', {
+            value: ov,
+            enumerable: false,
+            writable: true
+        });
+
+    }
+    setOV(ov) {
+        this.OV = ov;
+    }
     normalizeDeg(angle) {
         return ((angle + 180) % 360 + 360) % 360 - 180;
     }
@@ -37,46 +47,47 @@ export class maneuverHandler {
         };
     }
     async maneuverTo(target) {
-        const imu_rc = new BroadcastChannel("imu_rcv")
+        //console.log(global.OV);
+        //console.log(this.OV)
         console.log("Attitude maneuver init");
         let rates;
 
 
 
-        if (!OV.inAbort) {
+        if (!global.OV.inAbort) {
             rates = this.computeRates(
-                OV.imuData,
+                global.OV.IMU,
                 target,
                 { pitch: 5, roll: 5, yaw: 10 }
             );
         } else {
             rates = this.computeRates(
-                OV.imuData,
+                global.OV.IMU,
                 target,
                 { pitch: 30, roll: 30, yaw: 30 }
             );
         }
 
-        imu_rc.postMessage([
+        global.OV.IMU.setRates([
             rates.pitch,
             rates.roll,
             rates.yaw
         ]);
 
-        if (!OV.inAbort) {
+        if (!global.OV.inAbort) {
             await this.waitForOrientation(
                 [target.pitch - 0.2, target.pitch + 0.2],
                 [target.roll - 0.2, target.roll + 0.2],
                 [target.yaw - 0.2, target.yaw + 0.2]
             );
-            imu_rc.postMessage([0, 0, 0]);
+            global.OV.IMU.setRates([0, 0, 0]);
         } else {
             await this.waitForOrientation(
                 [target.pitch - 5, target.pitch + 5],
                 [target.roll - 5, target.roll + 5],
                 [target.yaw - 5, target.yaw + 5]
             );
-            imu_rc.postMessage([0, 0, 0]);
+            global.OV.IMU.setRates([0, 0, 0]);
         }
 
         if (await console.log("Attitude maneuver complete")) { return true; }
@@ -85,18 +96,17 @@ export class maneuverHandler {
     }
 
     waitForOrientation([pmin, pmax], [rmin, rmax], [ymin, ymax]) {
-        const imu_bc = new BroadcastChannel("imu");
+        //const imu_bc = new BroadcastChannel("imu");
         return new Promise(resolve => {
-            imu_bc.onmessage = (e) => {
-                OV.imuData = e.data;
-                const yaw = OV.imuData.yaw;
-                const roll = OV.imuData.roll;
-                const pitch = OV.imuData.pitch;
+            const imu_event = new BroadcastChannel("imu_event");
+            imu_event.onmessage = (e) => {
+                const yaw = global.OV.IMU.yaw;
+                const roll = global.OV.IMU.roll;
+                const pitch = global.OV.IMU.pitch;
                 if (yaw >= ymin && yaw <= ymax && roll >= rmin && roll <= rmax && pitch >= pmin && pitch <= pmax) {
-                    imu_bc.close();
                     resolve();
                 }
-            };
+            }
         });
     }
 
