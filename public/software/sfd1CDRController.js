@@ -76,6 +76,9 @@ export class SFD1CDRController {
             case "avionics":
                 this.avionicsInterface();
                 break;
+            case "gpc":
+                this.gpcInterface();
+                break;
             case "rcs_oms":
                 this.OMS_RCS_interface();
                 break;
@@ -97,7 +100,15 @@ export class SFD1CDRController {
         this.screen.addText("O", 350, 260);
         this.screen.addText("<", 385, 260);
         //this.addTouchZone("menu", 310, 575, 30, 25,);
-        this.addTouchZone("menu", 310, 255, 30, 25, (touch, orbiter) => { this.displayedTab = "menu"; })
+        this.addTouchZone("menu", 310, 255, 30, 25, (touch, orbiter) => {
+            (async () => {
+                await fetch("/api/ov/cdr_sfd1", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ tab: "menu" })
+                })
+            })()
+        })
         if (this.popup) { this.popUp(this.popupType, this.popupText); }
     }
 
@@ -143,14 +154,56 @@ export class SFD1CDRController {
             this.screen.addText("A", 10, 30);
             this.screen.addText("ABORT MODES", 15, 50);
             this.screen.addText("AVIONICS", 15, 70);
-            this.screen.addText("RCS/OMS", 15, 110);
-            this.screen.addText("SSME, ET, SRB", 15, 130);
+            this.screen.addText("GPC", 15, 110);
+            this.screen.addText("RCS/OMS", 15, 130);
+            this.screen.addText("SSME, ET, SRB", 15, 150);
 
             // Touchzones
-            this.addTouchZone("abortmodes", 15, 45, 300, 20, (touch, orbiter) => { this.displayedTab = "abortModes" })
-            this.addTouchZone("avionics", 15, 65, 300, 20, (touch, orbiter) => { this.displayedTab = "avionics" })
-            this.addTouchZone("rcs_oms", 15, 105, 300, 20, (touch, orbiter) => { this.displayedTab = "rcs_oms" })
-            this.addTouchZone("ssme", 15, 125, 300, 20, (touch, orbiter) => { this.displayedTab = "ssme" })
+            this.addTouchZone("abortmodes", 15, 45, 300, 20, (touch, orbiter) => {
+                (async () => {
+                    await fetch("/api/ov/cdr_sfd1", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tab: "abortModes" })
+                    })
+                })()
+            })
+            this.addTouchZone("avionics", 15, 65, 300, 20, (touch, orbiter) => {
+                (async () => {
+                    await fetch("/api/ov/cdr_sfd1", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tab: "avionics" })
+                    })
+                })()
+            })
+            this.addTouchZone("gpc", 15, 105, 300, 20, (touch, orbiter) => {
+                (async () => {
+                    await fetch("/api/ov/cdr_sfd1", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tab: "gpc" })
+                    })
+                })()
+            })
+            this.addTouchZone("rcs_oms", 15, 125, 300, 20, (touch, orbiter) => {
+                (async () => {
+                    await fetch("/api/ov/cdr_sfd1", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tab: "rcs_oms" })
+                    })
+                })()
+            })
+            this.addTouchZone("ssme", 15, 145, 300, 20, (touch, orbiter) => {
+                (async () => {
+                    await fetch("/api/ov/cdr_sfd1", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ tab: "ssme" })
+                    })
+                })()
+            })
         }
     }
 
@@ -304,6 +357,67 @@ export class SFD1CDRController {
             this.addTouchZone("3eATO", 210, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "ATO")
             this.addTouchZone("3eAOA", 270, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "AOA")
             this.addTouchZone("3eNONE", 310, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "NONE")
+        }
+    }
+
+
+
+    gpcInterface() {
+        this.screen.clearRect();
+        if (this.orbiter != null) {
+            this.screen.addFilledRect("darkslategray", 0, 0, 400, 25);
+            // Texts A
+            this.screen.addText("GPCs", 10, 7);
+
+            this.screen.addText("GPC", 15, 30);
+            this.screen.addText("STATE", 80, 30);
+            this.screen.addText("FAULT", 130, 30);
+            this.screen.addText("MEMORY", 190, 30);
+
+            this.screen.addText(OV.computers.gpc1.id, 15, 50);
+            this.screen.addText(OV.computers.gpc1.active, 80, 50);
+            this.screen.addText(OV.computers.gpc1.fault, 130, 50);
+            this.screen.addText(OV.computers.gpc1.memory, 190, 50);
+
+
+
+            this.screen.addText(OV.computers.gpc2.id, 15, 70);
+            this.screen.addText(OV.computers.gpc2.active, 80, 70);
+            this.screen.addText(OV.computers.gpc2.fault, 130, 70);
+            this.screen.addText(OV.computers.gpc2.memory, 190, 70);
+
+
+
+            this.screen.addText(OV.computers.gpc3.id, 15, 90);
+            this.screen.addText(OV.computers.gpc3.active, 80, 90);
+            this.screen.addText(OV.computers.gpc3.fault, 130, 90);
+            this.screen.addText(OV.computers.gpc3.memory, 190, 90);
+
+
+            this.screen.addText(OV.computers.gpc4.id, 15, 110);
+            this.screen.addText(OV.computers.gpc4.active, 80, 110);
+            this.screen.addText(OV.computers.gpc4.fault, 130, 110);
+            this.screen.addText(OV.computers.gpc4.memory, 190, 110);
+
+            this.screen.addText(OV.computers.gpc5.id, 15, 130);
+            this.screen.addText(OV.computers.gpc5.active, 80, 130);
+            this.screen.addText(OV.computers.gpc5.fault, 130, 130);
+            this.screen.addText(OV.computers.gpc5.memory, 190, 130);
+            //this.id = id;
+            //this.state = "off"; //"ready", "on", "fail"
+            //this.autoStartEnabble = false;
+            //this.speedPerc = 0.0;
+            //this.fuelQty = 100.0;
+            //this.fuelPress = 120.0;
+            /*this.fuelTemp = 70.0;
+            this.h2oQty = 100.0;
+            this.h20Press = 4.0;
+            this.h20Temp = 25.0;
+            this.oilQty = 100.0;
+            this.oilPress = 22.5;
+            this.oilTemp = 60.0;
+            this.apuTemp = 45.0;*/
+
         }
     }
     OMS_RCS_interface() {
