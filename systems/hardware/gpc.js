@@ -19,16 +19,16 @@ export class GPC {
   }
 
   // Neue Methode: JS-Code dynamisch ausführen
-  exec(code) {
+  exec(code, OV) {
     if (!this.active) {
       console.warn(`GPC ${this.id} ist deaktiviert. exec() übersprungen.`);
       return null;
     }
 
     try {
-      // Code als Funktion ausführen, memory wird als Scope übergeben
-      const func = new Function(code);
-      return func();
+      // Code als Funktion ausführen, OV wird als Parameter übergeben
+      const func = new Function('OV', code);
+      return func(OV);
     } catch (e) {
       this.fault = true;
       this.memory = e;
