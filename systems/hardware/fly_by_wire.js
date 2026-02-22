@@ -3,9 +3,9 @@ export class FlyByWireComputer {
 
 
 
-        this.imu_rc = new BroadcastChannel("imu_rcv");
-        this.imu_rc.onmessage = (e) => {
-            const d = e.data;
+        const imu_event = new BroadcastChannel("imu_event");
+        imu_event.onmessage = (e) => {
+            const d = global.OV.IMU;
             this.handleMove(d[0], d[1], d[2]);
 
 
@@ -14,7 +14,7 @@ export class FlyByWireComputer {
     handleMove(p, roll, yaw) {
         if (OV) {
             let pitch;
-            if (OV.imuData.roll > 90 || OV.imuData.roll < -90) {
+            if (OV.IMU.roll > 90 || OV.IMU.roll < -90) {
                 pitch = p * (-1);
             } else {
                 pitch = p;
@@ -79,7 +79,7 @@ export class FlyByWireComputer {
                     }
 
                     e.setActuatorPosition(p, y);
-                    console.warn(p + ", " + y)
+                    //console.warn(p + ", " + y)
                 });
 
             }
