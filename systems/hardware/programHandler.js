@@ -1,10 +1,16 @@
+import { readFile } from 'fs/promises';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
 export class programHandler {
-  constructor() { }
+  constructor() {
+  }
 
   // Exec muss async sein, weil loadCode async ist
   async exec(task, target) {
+    const eventDownlink = new BroadcastChannel("downlink_event");
     const code = await this.loadCode(task); // Warten bis Code geladen
-    let response = target.exec(code);       // Code an GPC übergeben
+    let response = target.exec(code, this.OV);       // Code an GPC übergeben mit OV
     console.log(response);
     if (response === false) {
       let gpcResp = await this.gpcRun(code);
@@ -27,19 +33,19 @@ export class programHandler {
   }
   async gpcRun(code) {
     const eventDownlink = new BroadcastChannel("downlink_event");
-    let resp1 = OV.computers.gpc1.exec(code);
+    let resp1 = global.OV.computers.gpc1.exec(code, this.OV);
     console.log(resp1)
     if (resp1 === false) {
       eventDownlink.postMessage(101);
-      let resp2 = OV.computers.gpc2.exec(code);
+      let resp2 = global.OV.computers.gpc2.exec(code, this.OV);
       console.log(resp2)
       if (resp2 === false) {
         eventDownlink.postMessage(102);
-        let resp3 = OV.computers.gpc3.exec(code);
+        let resp3 = global.OV.computers.gpc3.exec(code, this.OV);
         console.log(resp3)
         if (resp3 === false) {
           eventDownlink.postMessage(103);
-          let resp4 = OV.computers.gpc4.exec(code);
+          let resp4 = global.OV.computers.gpc4.exec(code, this.OV);
           console.log(resp4)
           if (resp4 === false) {
             eventDownlink.postMessage(104);
@@ -62,8 +68,10 @@ export class programHandler {
   }
 
   async loadCode(task) {
-    const response = await fetch('../libraries/code.json');
-    const jsonval = await response.json();
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const filePath = join(__dirname, '../libraries/code.json');
+    const jsonData = await readFile(filePath, 'utf-8');
+    const jsonval = JSON.parse(jsonData);
 
     // JSON-Datei muss z. B. so aussehen:
     // {
