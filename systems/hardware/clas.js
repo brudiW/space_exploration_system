@@ -31,12 +31,12 @@ export class CLASComputer {
         // Start after T+13s
         setTimeout(() => {
             let pitch;
-            if (OV.imuData.pitch > 0) {
-                pitch = OV.imuData.pitch - 180;
+            if (OV.IMU.pitch > 0) {
+                pitch = OV.IMU.pitch - 180;
             } else {
-                pitch = OV.imuData.pitch + 180;
+                pitch = OV.IMU.pitch + 180;
             }
-            OV.computers.maneuverHandlerTool.maneuverTo({pitch: pitch, roll: OV.imuData.roll, yaw: OV.imuData.yaw});
+            OV.computers.maneuverHandlerTool.maneuverTo({pitch: pitch, roll: OV.IMU.roll, yaw: OV.IMU.yaw});
         }, 4900);
         setTimeout(() => {
 
