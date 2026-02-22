@@ -33,6 +33,7 @@ import { Pod, RCSGroup, RCSThruster, RCSPod, OMSPod, ReactionControlSystemContro
 import { CLASComputer } from "./systems/hardware/clas.js";
 import { GPC } from "./systems/hardware/gpc.js";
 import { programHandler } from "./systems/hardware/programHandler.js";
+import { IMU } from './systems/hardware/imu.js';
 
 import { maneuverHandler } from "./systems/hardware/maneuverHandler.js";
 import { FlyByWireComputer } from "./systems/hardware/fly_by_wire.js";
@@ -54,6 +55,7 @@ import { GearController, Gear } from "./systems/hardware/gearController.js";
 import { Parachute } from "./systems/hardware/parachutes.js";
 
 import { GPSComputer, AbortGuidance } from "./systems/hardware/gpsComputer.js";
+import { ok } from 'assert';
 
 
 
@@ -78,7 +80,7 @@ const gpc5 = new GPC(5);
 const programmHandler = new programHandler();
 
 
-
+const imu = new IMU();
 const maneuverHandlerTool = new maneuverHandler();
 const fbwComp = new FlyByWireComputer();
 
@@ -259,17 +261,10 @@ class Orbiter {
     };
     this.screens = {
       cdr_pfd2: "menu",
-      cdr_sfd1: "gpc",
+      cdr_sfd1: "menu",
       plt_pfd2: "menu",
     };
-    this.imuData = {
-      pitch: 0,
-      roll: 0,
-      yaw: 0,
-      pitchRate: 0,
-      rollRate: 0,
-      yawRate: 0
-    };
+    this.IMU = imu;
     this.positionData = {
       mode: "global",
       x_accel: 0,
@@ -358,7 +353,7 @@ class Orbiter {
   metUpdaterLoop() {
     const groundChannelPos = new BroadcastChannel('ground_request_pos');
 
-    this.software.metTimer = setInterval(() => {
+    const metTimer = setInterval(() => {
       //console.log("met: " + this.mission.met + ", mode: " + this.software.missionMode)
       OV.mission.met++;
       switch (this.software.missionMode) {
@@ -366,7 +361,7 @@ class Orbiter {
           if (OV.inIntactAbort && OV.mission.met <= 0) {
             console.log('Intact Pad Abort!');
             OV.computers.programHandler.exec('SSMEshutDown', OV.computers.gpc2);
-            clearInterval(OV.mission.metTimer);
+            clearInterval(metTimer);
           }
           break;
         case "ascent":
@@ -384,7 +379,7 @@ class Orbiter {
   }
   GroundLaunchSequencer() {
     const eventDownlink = new BroadcastChannel("downlink_event");
-    this.mission.met = -450;
+    this.mission.met = -60;
     const GLS = setInterval(() => {
       switch (this.mission.met) {
         case -450:
@@ -425,7 +420,7 @@ class Orbiter {
           clearInterval(GLS);
           break;
       }
-    })
+    }, 1000);
   }
 }
 
@@ -438,9 +433,12 @@ class Orbiter {
 
 
 
-const OV = new Orbiter();
+globalThis.OV = new Orbiter();
+
 console.log(OV);
 
+// Set OV reference in programHandler
+programmHandler.setOV(OV);
 
 
 // Dynamic
@@ -463,9 +461,17 @@ OV.rcsExtenderTanks.push(RCSExtE);
 
 
 app.get("/api/ov", (req, res) => {
-  console.log("api/ov")
+  //console.log("api/ov")
   res.json(OV);
 });
+
+app.post("/launch", (req, res) => {
+  console.log("Launch!");
+  OV.metUpdaterLoop();
+  OV.GroundLaunchSequencer();
+  OV.IMU.update();
+  res.json({ok: true})
+})
 
 
 
@@ -520,7 +526,7 @@ app.post("/api/ov/mergeControls", (req, res) => {
   const { axis } = req.body;
   console.log(axis)
   let pitchRate;
-  if (OV.imuData.roll > 90 || OV.imuData.roll < -90) {
+  if (OV.IMU.roll > 90 || OV.IMU.roll < -90) {
     pitchRate = axis[1] * MAX_RATE / 50 * -1;
   } else {
     pitchRate = axis[1] * MAX_RATE / 50;
@@ -538,6 +544,13 @@ app.post("/api/ov/cdr_pfd2", (req, res) => {
   const { tab } = req.body;
   console.log(tab)
   OV.screens.cdr_pfd2 = tab;
+  res.json({ ok: true })
+})
+
+app.post("/api/ov/cdr_sfd1", (req, res) => {
+  const { tab } = req.body;
+  console.log(tab)
+  OV.screens.cdr_sfd1 = tab;
   res.json({ ok: true })
 })
 
@@ -570,9 +583,25 @@ app.post("/api/ov/abortMode/3E", (req, res) => {
 // API MISSION CONTROL SIDE //
 //////////////////////////////
 
+const eventDownlink = new BroadcastChannel('downlink_event');
+let eventCodeHistory = [];
+eventDownlink.onmessage = (e) => {
+  eventCodeHistory.push([new Date(), e.data]);
+}
+
 app.get("/api/mc/ov", (req, res) => {
   res.json(OV);
 });
+
+app.post("/api/mc/terminate", (req, res) => {
+  const { part } = req.body;
+  const fts_channel = new BroadcastChannel("FTS Uplink");
+  fts_channel.postMessage(["terminateConfirm", part])
+})
+
+app.get("/api/mc/ov/events", (req, res) => {
+  res.json(eventCodeHistory);
+})
 
 
 
