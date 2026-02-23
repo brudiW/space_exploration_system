@@ -437,8 +437,6 @@ globalThis.OV = new Orbiter();
 
 console.log(OV);
 
-// Set OV reference in programHandler
-programmHandler.setOV(OV);
 
 
 // Dynamic
@@ -656,5 +654,6 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
+
 
 
