@@ -642,6 +642,46 @@ setInterval(() => { //ET Fuel Deplete
   //console.log(OV.et);
 }, 100)
 
+setInterval(() => {
+  if (OV) {
+    if (OV.SRBs.l.ignited && OV.SRBs.l.propellantMass > 0) {
+      OV.SRBs.l.propellantMass -= 4028;
+    }
+    if (OV.SRBs.r.ignited && OV.SRBs.r.propellantMass > 0) {
+      OV.SRBs.r.propellantMass -= 4028;
+    }
+  }
+}
+let vel = 0;
+setInterval(() => {
+  let totalMass = 0;
+  let totalForce = 0;
+  let accel = 0;
+  if (OV) {
+    totalMass += 101000;
+    if (!OV.et.jettisoned) {
+      totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
+    }
+    if (!OV.SRBs.l.seperated) {
+      totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
+      if (OV.SRBs.l.ignited) {
+        totalForce += 13300;
+      }
+    }
+    if (!OV.SRBs.r.seperated) {
+      totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
+      if (OV.SRBs.r.ignited) {
+        totalForce += 13300;
+      }
+    }
+    totalForce += (((OV.ssme.ctr.thrust * 1817) / 104.5)/10 + ((OV.ssme.l.thrust * 1817) / 104.5)/10 + ((OV.ssme.r.thrust * 1817) / 104.5)/10);
+    accel = totalMass / totalForce;
+    vel = accel * 0.1 - vel;
+    console.log(vel);
+  }
+}, 100);
+    
+
 
 setInterval(() => {  // Not working right now, reworking physics and location system
   const telemetry = OV.mission.telemetryPos;
@@ -675,6 +715,7 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
+
 
 
 
