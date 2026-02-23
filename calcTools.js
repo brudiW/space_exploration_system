@@ -43,3 +43,50 @@ export function groundVectorToLocalFacingVector(x, y, z) {
 
   return [kx, ky, kz];
 }
+export function computeAthmospere(h = 0, v = 0, rl = 10) {
+
+  // Standardatmosphäre Meereshöhe (SI)
+  var TEMPSL = 288.15;    // K
+  var RHOSL = 1.225;      // kg/m^3
+  var PRESSSL = 101325;   // Pa
+
+  var saTheta = 1.0;
+  var saSigma = 1.0;
+  var saDelta = 1.0;
+
+  // einfache ISA-Troposphäre bis 11 km
+  if (h < 11000) {
+    saTheta = 1 - 0.0065 * h / TEMPSL;
+    saDelta = Math.pow(saTheta, 5.2561);
+    saSigma = Math.pow(saTheta, 4.2561);
+  }
+
+  let tempVal = TEMPSL * saTheta;
+  let rhoVal = RHOSL * saSigma;
+  let pVal = PRESSSL * saDelta;
+
+  // dynamische Viskosität (Sutherland)
+  let viscVal = 1.458e-6 * Math.pow(tempVal, 1.5) / (tempVal + 110.4);
+
+  // Schallgeschwindigkeit
+  let soundVal = Math.sqrt(1.4 * 287.05 * tempVal);
+
+  let machVal = v / soundVal;
+  let qVal = 0.5 * rhoVal * v * v;
+  let reynolds = rhoVal * v * rl / viscVal;
+
+  let cfturb = 0.455 / Math.pow(Math.log10(reynolds), 2.58);
+  let cflam = 1.328 / Math.sqrt(reynolds);
+  return {
+    temp: tempVal,
+    density: rhoVal,
+    pressure: pVal,
+    viscosity: viscVal,
+    speed_of_sound: soundVal,
+    mach_speed: machVal,
+    dynamic_pressure: qVal,
+    reynolds: reynolds,
+    laminar_flow: cflam,
+    turbular_flow: cfturb
+  };
+}
