@@ -8,7 +8,7 @@ export class Orbitalmodell {
         this.apoapsis = 6800000; //m, 400 km
         this.periapsis = 6600000; //m, 200 km 
         this.a = (this.apoapsis + this.periapsis) / 2; // Grosse Halbachse (m)
-        this.e = (this.a - this.periapsis) / this.a; // Ekzentritaet
+        this.e = (this.apoapsis - this.periapsis) / (this.apoapsis + this.periapsis); // Ekzentritaet
         this.p = (this.apoapsis - this.periapsis) / 2 + this.periapsis; // Kleine Halbachse (m)
     }
     getPointOnOrbit(lon = 0) {
