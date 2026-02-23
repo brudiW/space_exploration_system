@@ -12,3 +12,9 @@ export function groundVectorToCoords(x, y, z) {
   const lon = Math.atan2(y, x);
   return [ lat, lon ];
 }
+export function groundVectorToLocationVector(x, y, z, h) {
+  x = (x / rEarth) * (rEarth + h);
+  y = (y / rEarth) * (rEarth + h);
+  z = (z / rEarth) * (rEarth + h);
+  return [x, y, z];
+}
