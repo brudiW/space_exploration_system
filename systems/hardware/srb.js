@@ -20,6 +20,8 @@ export class SRB {
     constructor() {
         this.ignited = false;
         this.pos = [0, 0];
+        this.propellantMass = 503500;
+        this.emptyMass = 86200;
         this.seperated = false;
     }
     ignite() {
@@ -31,4 +33,5 @@ export class SRB {
     cmdPos([x, y]) {
         this.pos = [x, y];
     }
+
 }
