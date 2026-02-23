@@ -24,7 +24,11 @@ export class IMU {
 
         // Clamp / wrap
         this.pitch = ((this.pitch + 180) % 360) - 180;
-        this.roll = ((this.roll + 180) % 360) - 180;
+        if (this.roll < -180) {
+            this.roll += 360;
+        } else if (this.roll > 180) {
+            this.roll -= 360;
+        }
         this.yaw = (this.yaw + 360) % 360;
         imu_event.postMessage("");
 
