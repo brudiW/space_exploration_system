@@ -6,6 +6,7 @@ export class ET {
         this.lh2Temp = -256.00;
         this.loxPress = 245.00;
         this.lh2Press = 225.00;
+        this.emptyMass = 29900;
         this.jettisoned = false;
     }
     drain(ctr, l, r) {
@@ -32,4 +33,5 @@ export class ET {
             setInterval(() => { this.drain(1.00); }, 1000);
         })
     }
+
 }
