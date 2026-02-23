@@ -14,7 +14,7 @@ import { OrbitalModell } from "./OrbitModell.js";
 let groundVector = [0, 0, 0]; //x,y,z (xy-Ebene = Äquator)
 let locationVector = [0, 0, 0];
 
-let globalFacingVector [0, 0, 0];
+let globalFacingVector = [0, 0, 0];
 
 
 
@@ -675,6 +675,7 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
+
 
 
 
