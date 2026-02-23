@@ -10,7 +10,7 @@ export class programHandler {
   async exec(task, target) {
     const eventDownlink = new BroadcastChannel("downlink_event");
     const code = await this.loadCode(task); // Warten bis Code geladen
-    let response = target.exec(code, this.OV);       // Code an GPC übergeben mit OV
+    let response = target.exec(code, global.OV);       // Code an GPC übergeben mit OV
     console.log(response);
     if (response === false) {
       let gpcResp = await this.gpcRun(code);
@@ -33,19 +33,19 @@ export class programHandler {
   }
   async gpcRun(code) {
     const eventDownlink = new BroadcastChannel("downlink_event");
-    let resp1 = global.OV.computers.gpc1.exec(code, this.OV);
+    let resp1 = global.OV.computers.gpc1.exec(code, global.OV);
     console.log(resp1)
     if (resp1 === false) {
       eventDownlink.postMessage(101);
-      let resp2 = global.OV.computers.gpc2.exec(code, this.OV);
+      let resp2 = global.OV.computers.gpc2.exec(code, global.OV);
       console.log(resp2)
       if (resp2 === false) {
         eventDownlink.postMessage(102);
-        let resp3 = global.OV.computers.gpc3.exec(code, this.OV);
+        let resp3 = global.OV.computers.gpc3.exec(code, global.OV);
         console.log(resp3)
         if (resp3 === false) {
           eventDownlink.postMessage(103);
-          let resp4 = global.OV.computers.gpc4.exec(code, this.OV);
+          let resp4 = global.OV.computers.gpc4.exec(code, global.OV);
           console.log(resp4)
           if (resp4 === false) {
             eventDownlink.postMessage(104);
@@ -82,3 +82,4 @@ export class programHandler {
     return jsonval[task]; // Gibt den JS-Code für die Aufgabe zurück
   }
 }
+
