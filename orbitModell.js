@@ -8,7 +8,7 @@ export class Orbitalmodell {
         this.apoapsis = 6800000; //m, 400 km
         this.periapsis = 6600000; //m, 200 km 
         this.a = (this.apoapsis + this.periapsis) / 2; // Grosse Halbachse (m)
-        this.e = (this.a - this.periapsis) / this.a; // Ekliptik
+        this.e = (this.a - this.periapsis) / this.a; // Ekzentritaet
         this.p = (this.apoapsis - this.periapsis) / 2 + this.periapsis; // Kleine Halbachse (m)
     }
     getPointOnOrbit(lon = 0) {
@@ -32,6 +32,10 @@ export class Orbitalmodell {
         if (this.inclination == 0) return;
         lon = (180 / Math.PI) * Math.asin(lat / this.inclination);
         return lon;
+    }
+    getOrbitSpeed(height = 0) {
+        let r = rE + height;
+        let vel = Math.sqrt(mE*((2/r)-(1/this.a)))
     }
     //kommt mehr, nur grundlage
 }
