@@ -4,6 +4,27 @@ import cors from 'cors';
 import path from 'path';
 import session from 'express-session';
 
+import { coordsToGroundVector, groundVectorToCoords, groundVectorToLocationVector } from "./calcTools.js";
+
+import { OrbitalModell } from "./OrbitModell.js";
+
+
+// Simulation init
+
+let groundVector = [0, 0, 0]; //x,y,z (xy-Ebene = Äquator)
+let locationVector = [0, 0, 0];
+
+let globalFacingVector [0, 0, 0];
+
+
+
+const orbit = new OrbitalModell();
+
+
+
+
+
+
 const app = express();
 //console.log(path.dirname());
 //console.log(__dirname);
