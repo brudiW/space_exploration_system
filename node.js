@@ -660,7 +660,7 @@ setInterval(() => {
       OV.SRBs.r.propellantMass -= 4028;
     }
   }
-}
+}, 100);
 let vel = 0;
 setInterval(() => {
   let totalMass = 0;
