@@ -12,10 +12,18 @@ import { OrbitalModell } from "./OrbitModell.js";
 
 // Simulation init
 
-let groundVector = [0, 0, 0]; //x,y,z (xy-Ebene = Äquator)
-let locationVector = [0, 0, 0];
+// Pos Vectors
+let groundVector = new Vector3(0, 0, 0); //x,y,z (xy-Ebene = Äquator); Position on the ground
+let locationVector = new Vector3(0, 0, 0); // Position mit Höhe einberechnet
 
-let globalFacingVector = [0, 0, 0];
+let globalFacingVector = new Vector3(0, 0, 0); // beschreibt "vorwärts" (local pitch und yaw = 0) an der aktuellen Position im Orbit und in der Athmosphäre
+
+let facingVector = new Vector3(0, 0, 0); // Blickrichtung des Fahrzeuges an den globalen Koordinatenachsen ausgerichtet
+
+let thrustVector = new Vector3(0, 0, 0); // Der Schubvektor des Fahrzeugs, an den globalen Koordinatenachsen ausgerichtet
+
+
+
 
 
 
