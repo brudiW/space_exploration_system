@@ -3,8 +3,9 @@ import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
 import session from 'express-session';
+import { Vector2, Vector3 } from '@amandaghassaei/vector-math';
 
-import { coordsToGroundVector, groundVectorToCoords, groundVectorToLocationVector } from "./calcTools.js";
+import { CoordsToGroundVector, groundVectorToCoords, groundVectorToLocationVector } from "./calcTools.js";
 
 import { OrbitalModell } from "./OrbitModell.js";
 
