@@ -414,7 +414,7 @@
                 <div>
                     <div id="clasSTATE" class="module">
                         CLAS
-                        <div class="linear-switch vertical" data-labels="ARM,OFF"></div>
+                        <div class="linear-switch vertical" id="clasSTATE" data-labels="ARM,OFF"></div>
                         <div id="clasSTATElight" class="statusLight">[TRIG]</div>
                     </div>
                     <div id="omsARMstateSWITCHES" class="module">
@@ -447,12 +447,13 @@
                         SRB
                         <div class="linear-switch vertical" data-labels="MAN/AUTO,AUTO"></div>
                         <div id="srbJET" class="statusLight"
-                            onclick="if(srbSepMode == 'man'){OV.srbHandler.seperate()}">SEP</div>
+                            onclick="if(OV.software.srbSepMode == 'man'){OV.srbHandler.seperate()}">SEP</div>
                     </div>
                     <div id="etMANAUTOandSEP" class="module">
                         ET
                         <div class="linear-switch vertical" data-labels="MAN,AUTO"></div>
-                        <div id="etJET" class="statusLight" onclick="if(etSepMode){OV.et.seperate()}">SEP</div>
+                        <div id="etJET" class="statusLight" onclick="if(OV.software.etSepMode){OV.et.seperate()}">SEP
+                        </div>
                     </div>
                 </div>
                 <!--GEAR STATUS LIGHTS, SWITCH UP/RELEASE; BRAKE CHUTE DEPLOY, CUT; CLAS ABORT; CLAS ABORT PARACHUTE SYSTEM-->
@@ -475,7 +476,7 @@
                         <br>
                         <button id="CLASabortButton"
                             style="width: 140px; height: 140px; border-radius: 70px; color: white; font-size: xx-large; background-color: red;"
-                            onclick="OV.computers.programHandler.exec('abort', OV.computers.gpc1)">ABORT</button>
+                            onclick="fetch('/api/ov/abort', {method: 'POST'})">ABORT</button>
                     </div>
                     <div id="clasParachuteControls" class="module">
                         PARACHUTES
@@ -696,6 +697,9 @@
             }
         }
 
+        const clasSwitch = document.querySelector("#clasSTATE .linear-switch");
+
+
         // DREHKNÖPFE
 
         document.querySelectorAll(".knob-container").forEach(container => {
@@ -748,6 +752,7 @@
 
         // SCHALTER
 
+        console.log(document.querySelectorAll(".linear-switch"))
         document.querySelectorAll(".linear-switch").forEach(switchEl => {
             const labels = switchEl.dataset.labels.split(",");
             const max = labels.length - 1;
@@ -778,8 +783,8 @@
                     : (switchEl.clientWidth - handle.clientWidth) / max;
 
                 // Clamp pos to 0..max
-                pos = Math.max(0, Math.min(pos, max));
-                switchEl.dataset.pos = pos;
+                //pos = Math.max(0, Math.min(pos, max));
+                //switchEl.dataset.pos = pos;
 
                 // Position handle
                 if (vertical) handle.style.top = (step * pos) + "px";
@@ -803,6 +808,7 @@
                         label: labels[pos]
                     }
                 }));
+                console.log(switchEl);
             };
 
             update();
@@ -840,30 +846,30 @@
 
         //CLAS ARM SWITCH
 
-        const clasSwitch = document.querySelector("#clasSTATE .linear-switch");
 
         clasSwitch.addEventListener("change", e => {
             console.log("CLAS switch changed:", e.detail.label);
+            console.log(e)
 
             // Example: trigger a function
             if (e.detail.label === "ARM") {
-                armClasSystem();
+                fetch("/api/ov/clas/arm", { method: "POST" });
+                fetch("/api/cockpit/switches/clasSTATE", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pos: e.detail.pos.toString() })
+                });
             } else if (e.detail.label === "OFF") {
-                shutdownClasSystem();
+                (async => {
+                    fetch("/api/ov/clas/off", { method: "POST" });
+                    fetch("/api/cockpit/switches/clasSTATE", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ pos: e.detail.pos.toString() })
+                    });
+                })();
             }
         });
-
-        function armClasSystem() {
-            document.getElementById("clasSTATElight").style.color = "orange";
-            document.getElementById("clasSTATElight").innerHTML = "[ARM]";
-            OV.computers.clasComputer.armState = true;
-        }
-
-        function shutdownClasSystem() {
-            document.getElementById("clasSTATElight").style.color = "black";
-            document.getElementById("clasSTATElight").innerHTML = "";
-            OV.computers.clasComputer.armState = false;
-        }
 
 
 
@@ -1068,6 +1074,19 @@
 
         function buttonStateUpdate() {
             if (OV != null) {
+                if (OV.computers.clasComputer.armState && !OV.computers.clasComputer.failState && !OV.computers.clasComputer.triggerState) {
+                    document.getElementById("clasSTATElight").style.color = "orange";
+                    document.getElementById("clasSTATElight").innerHTML = "[ARM]";
+                } else if (OV.computers.clasComputer.failState) {
+                    document.getElementById("clasSTATElight").style.color = "red";
+                    document.getElementById("clasSTATElight").innerHTML = "[FAIL]";
+                } else if (OV.computers.clasComputer.triggerState) {
+                    document.getElementById("clasSTATElight").style.color = "yellow";
+                    document.getElementById("clasSTATElight").innerHTML = "[TRIG]";
+                } else {
+                    document.getElementById("clasSTATElight").style.color = "black";
+                    document.getElementById("clasSTATElight").innerHTML = "";
+                }
                 /*if (
                     OV.parachutes.brake.deployed
                 ) {
@@ -1120,8 +1139,14 @@
                 }
             }
         }
+        function switchStateUpdate() {
+            Object.values(clasSwitch.dataset)
+            clasSwitch.dataset.pos = globalThis.OV.switches.clasSTATE;
+            console.log(clasSwitch.dataset)
+        }
 
         setTimeout(() => { setInterval(buttonStateUpdate, 100) }, 1000);
+        setTimeout(() => { setInterval(switchStateUpdate, 100) }, 1000);
 
 
     </script>
