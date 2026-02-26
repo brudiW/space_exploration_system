@@ -3,31 +3,31 @@ import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
 import session from 'express-session';
-import { Vector2, Vector3 } from '@amandaghassaei/vector-math';
+import 'vector-math';
 
 import { CoordsToGroundVector, groundVectorToCoords, groundVectorToLocationVector } from "./calcTools.js";
 
-import { OrbitalModell } from "./OrbitModell.js";
+import { Orbitalmodell } from "./orbitModell.js";
 
 
 // Simulation init
 
 // Pos Vectors
-let groundVector = new Vector3(0, 0, 0); //x,y,z (xy-Ebene = Äquator); Position on the ground
-let locationVector = new Vector3(0, 0, 0); // Position mit Höhe einberechnet
+let groundVector = new Vector(0, 0, 0); //x,y,z (xy-Ebene = Äquator); Position on the ground
+let locationVector = new Vector(0, 0, 0); // Position mit Höhe einberechnet
 
-let globalFacingVector = new Vector3(0, 0, 0); // beschreibt "vorwärts" (local pitch und yaw = 0) an der aktuellen Position im Orbit und in der Athmosphäre
+let globalFacingVector = new Vector(0, 0, 0); // beschreibt "vorwärts" (local pitch und yaw = 0) an der aktuellen Position im Orbit und in der Athmosphäre
 
-let facingVector = new Vector3(0, 0, 0); // Blickrichtung des Fahrzeuges an den globalen Koordinatenachsen ausgerichtet
+let facingVector = new Vector(0, 0, 0); // Blickrichtung des Fahrzeuges an den globalen Koordinatenachsen ausgerichtet
 
-let thrustVector = new Vector3(0, 0, 0); // Der Schubvektor des Fahrzeugs, an den globalen Koordinatenachsen ausgerichtet
-
-
+let thrustVector = new Vector(0, 0, 0); // Der Schubvektor des Fahrzeugs, an den globalen Koordinatenachsen ausgerichtet
 
 
 
 
-const orbit = new OrbitalModell();
+
+
+const orbit = new Orbitalmodell();
 
 
 
@@ -42,9 +42,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join('./', "public")));
 app.use(session({
-  secret: "super-secret-agency-key",
-  resave: false,
-  saveUninitialized: false
+    secret: "super-secret-agency-key",
+    resave: false,
+    saveUninitialized: false
 }))
 
 // import everything hardware
@@ -86,6 +86,7 @@ import { Parachute } from "./systems/hardware/parachutes.js";
 
 import { GPSComputer, AbortGuidance } from "./systems/hardware/gpsComputer.js";
 import { ok } from 'assert';
+import { Vector } from 'vector-math';
 
 
 
@@ -116,8 +117,7 @@ const fbwComp = new FlyByWireComputer();
 
 
 const launchPoint = { lat: 0, lon: 0 };
-const abortSites = [
-  {
+const abortSites = [{
     name: "template",
     icao: "temp",
     lat: 0,
@@ -126,8 +126,7 @@ const abortSites = [
     type: "template",
     minMET: 0,
     maxMET: -1
-  }
-];
+}];
 
 const gps = new GPSComputer(launchPoint, 78.5);
 const abortGuidance = new AbortGuidance(abortSites);
@@ -267,191 +266,202 @@ const RCSExtE = new RCSExtenderTank("5", 100, 100, 150, 150);
 ///////////////////
 
 class Orbiter {
-  constructor() {
-    this.inAbort = false;
-    this.inIntactAbort = false;
-    this.intactAbortMode = {
-      threeEngine: "",
-      twoEngine: "",
-      singleEngine: ""
-    };
-    this.fts = FTS;
-    this.computers = {
-      clasComputer: clasComputer,
-      gpc1: gpc1,
-      gpc2: gpc2,
-      gpc3: gpc3,
-      gpc4: gpc4,
-      gpc5: gpc5,
-      programHandler: programmHandler,
-      maneuverHandlerTool: maneuverHandlerTool,
-      fbwComp: fbwComp,
-      gpsComp: gps,
-      guidanceComp: abortGuidance
-    };
-    this.screens = {
-      cdr_pfd2: "menu",
-      cdr_sfd1: "menu",
-      plt_pfd2: "menu",
-    };
-    this.IMU = imu;
-    this.positionData = {
-      mode: "global",
-      x_accel: 0,
-      y_accel: 0,
-      z_accel: 0,
-      x_rate: 0,
-      y_rate: 0,
-      z_rate: 0,
-      downrange: 0,
-      altitude: 0,
-      crossrange: 0
+    constructor() {
+        this.inAbort = false;
+        this.inIntactAbort = false;
+        this.intactAbortMode = {
+            threeEngine: "",
+            twoEngine: "",
+            singleEngine: ""
+        };
+        this.fts = FTS;
+        this.computers = {
+            clasComputer: clasComputer,
+            gpc1: gpc1,
+            gpc2: gpc2,
+            gpc3: gpc3,
+            gpc4: gpc4,
+            gpc5: gpc5,
+            programHandler: programmHandler,
+            maneuverHandlerTool: maneuverHandlerTool,
+            fbwComp: fbwComp,
+            gpsComp: gps,
+            guidanceComp: abortGuidance
+        };
+        this.screens = {
+            cdr_pfd2: "menu",
+            cdr_sfd1: "menu",
+            plt_pfd2: "menu",
+        };
+        this.IMU = imu;
+        this.positionData = {
+            mode: "global",
+            x_accel: 0,
+            y_accel: 0,
+            z_accel: 0,
+            x_rate: 0,
+            y_rate: 0,
+            z_rate: 0,
+            downrange: 0,
+            altitude: 0,
+            crossrange: 0
+        }
+        this.gear = {
+            fwd: fwdGear,
+            l: lGear,
+            r: rGear
+        };
+        this.ssme = {
+            ctr: ctrSSME,
+            l: lSSME,
+            r: rSSME
+        };
+        this.rcsController = RCS_OMS;
+        this.rcsExtenderTanks = [];
+        this.oms = {
+            l: OMSl,
+            r: OMSr
+        };
+        this.APUs = {
+            APUa: APUa,
+            APUb: APUb,
+            APUc: APUc
+        }
+        this.et = et;
+        this.SRBs = {
+            l: SRBl,
+            r: SRBr
+        };
+        this.srbHandler = srbHandler;
+        this.avionics = {
+            LelevonA: LelevonA,
+            LelevonB: LelevonB,
+            RelevonB: RelevonB,
+            RelevonA: RelevonA,
+            rudderBrake: rudderBrake,
+            bodyflap: bodyflap
+        };
+        this.radarAlt = {
+            mtr: 0,
+            ft: 0
+        };
+        this.gearController = gearController;
+        this.parachutes = {
+            brake: brakeChute,
+            mainA: mainAchute,
+            mainB: mainBchute,
+            mainC: mainCchute,
+            backUpA: backUpChute
+        };
+        this.ssmeHandler = ssmeHandler;
+        this.mission = {
+            met: 0,
+            telemetryPos: {
+                V: 0,
+                alt_m: 0,
+                downrange_m: 0,
+                mach: 0
+            }
+        };
+
+
+
+
+
+
+
+        this.software = {
+            metTimer: null,
+            pilotTakeover: false,
+            srbSepMode: "auto",
+            etSepMode: false,
+
+
+            missionMode: ""
+        };
+        this.switches = {
+            clasSTATE: "1",
+            omsl: "1",
+            omsr: "1",
+            srbMANAUTOandSEP: "0",
+            etMANAUTOandSEP: "0",
+            gear: "0"
+        };
+        this.knobs = {};
+
     }
-    this.gear = {
-      fwd: fwdGear,
-      l: lGear,
-      r: rGear
-    };
-    this.ssme = {
-      ctr: ctrSSME,
-      l: lSSME,
-      r: rSSME
-    };
-    this.rcsController = RCS_OMS;
-    this.rcsExtenderTanks = [];
-    this.oms = {
-      l: OMSl,
-      r: OMSr
-    };
-    this.APUs = {
-      APUa: APUa,
-      APUb: APUb,
-      APUc: APUc
+    metUpdaterLoop() {
+        const groundChannelPos = new BroadcastChannel('ground_request_pos');
+
+        const metTimer = setInterval(() => {
+            //console.log("met: " + this.mission.met + ", mode: " + this.software.missionMode)
+            OV.mission.met++;
+            switch (this.software.missionMode) {
+                case "auto-sequence":
+                    if (OV.inIntactAbort && OV.mission.met <= 0) {
+                        console.log('Intact Pad Abort!');
+                        OV.computers.programHandler.exec('SSMEshutDown', OV.computers.gpc2);
+                        clearInterval(metTimer);
+                    }
+                    break;
+                case "ascent":
+                    groundChannelPos.postMessage({ type: 'getTrajectory', met: OV.mission.met });
+                    if (!this.inAbort && !this.inIntactAbort) {
+                        OV.computers.programHandler.exec('ascentHandler', OV.computers.gpc4);
+                    }
+                    break;
+                case "clas-abort":
+                    break;
+                case "intact-abort":
+                    break;
+            }
+        }, 1000);
     }
-    this.et = et;
-    this.SRBs = {
-      l: SRBl,
-      r: SRBr
-    };
-    this.srbHandler = srbHandler;
-    this.avionics = {
-      LelevonA: LelevonA,
-      LelevonB: LelevonB,
-      RelevonB: RelevonB,
-      RelevonA: RelevonA,
-      rudderBrake: rudderBrake,
-      bodyflap: bodyflap
-    };
-    this.radarAlt = {
-      mtr: 0,
-      ft: 0
-    };
-    this.gearController = gearController;
-    this.parachutes = {
-      brake: brakeChute,
-      mainA: mainAchute,
-      mainB: mainBchute,
-      mainC: mainCchute,
-      backUpA: backUpChute
-    };
-    this.ssmeHandler = ssmeHandler;
-    this.mission = {
-      met: 0,
-      telemetryPos: {
-        V: 0,
-        alt_m: 0,
-        downrange_m: 0,
-        mach: 0
-      }
-    };
-
-
-
-
-
-
-
-    this.software = {
-      metTimer: null,
-      pilotTakeover: false,
-
-
-      missionMode: ""
-    };
-
-  }
-  metUpdaterLoop() {
-    const groundChannelPos = new BroadcastChannel('ground_request_pos');
-
-    const metTimer = setInterval(() => {
-      //console.log("met: " + this.mission.met + ", mode: " + this.software.missionMode)
-      OV.mission.met++;
-      switch (this.software.missionMode) {
-        case "auto-sequence":
-          if (OV.inIntactAbort && OV.mission.met <= 0) {
-            console.log('Intact Pad Abort!');
-            OV.computers.programHandler.exec('SSMEshutDown', OV.computers.gpc2);
-            clearInterval(metTimer);
-          }
-          break;
-        case "ascent":
-          groundChannelPos.postMessage({ type: 'getTrajectory', met: OV.mission.met });
-          if (!this.inAbort && !this.inIntactAbort) {
-            OV.computers.programHandler.exec('ascentHandler', OV.computers.gpc4);
-          }
-          break;
-        case "clas-abort":
-          break;
-        case "intact-abort":
-          break;
-      }
-    }, 1000);
-  }
-  GroundLaunchSequencer() {
-    const eventDownlink = new BroadcastChannel("downlink_event");
-    this.mission.met = -60;
-    const GLS = setInterval(() => {
-      switch (this.mission.met) {
-        case -450:
-          console.log("Crew Access Arm Retract");
-          break;
-        case -300:
-          this.APUs.APUa.start();
-          eventDownlink.postMessage(97);
-          this.APUs.APUb.start();
-          eventDownlink.postMessage(98);
-          this.APUs.APUc.start();
-          eventDownlink.postMessage(99);
-          break;
-        case -235:
-          this.computers.programHandler.exec("SSME-gimbal-test", this.computers.gpc1);
-          eventDownlink.postMessage(465);
-          this.computers.programHandler.exec("AeroSurface-test", this.computers.gpc3);
-          eventDownlink.postMessage(473);
-          break;
-        case -175:
-          console.log("Gaseous Oxygen Vent Arm Retract");
-          break;
-        case -55:
-          console.log("Switch to Internal Power");
-          break;
-        case -31:
-          this.computers.programHandler.exec("autoSequenceAndAscent", this.computers.gpc2);
-          eventDownlink.postMessage(7);
-          break;
-        case -16:
-          console.log("Sound Suppression System");
-          break;
-        case -10:
-          console.log("Hydrogen Burn Off");
-          break;
-        case 19:
-          console.log("Pad Safing");
-          clearInterval(GLS);
-          break;
-      }
-    }, 1000);
-  }
+    GroundLaunchSequencer() {
+        const eventDownlink = new BroadcastChannel("downlink_event");
+        this.mission.met = -60;
+        const GLS = setInterval(() => {
+            switch (this.mission.met) {
+                case -450:
+                    console.log("Crew Access Arm Retract");
+                    break;
+                case -300:
+                    this.APUs.APUa.start();
+                    eventDownlink.postMessage(97);
+                    this.APUs.APUb.start();
+                    eventDownlink.postMessage(98);
+                    this.APUs.APUc.start();
+                    eventDownlink.postMessage(99);
+                    break;
+                case -235:
+                    this.computers.programHandler.exec("SSME-gimbal-test", this.computers.gpc1);
+                    eventDownlink.postMessage(465);
+                    this.computers.programHandler.exec("AeroSurface-test", this.computers.gpc3);
+                    eventDownlink.postMessage(473);
+                    break;
+                case -175:
+                    console.log("Gaseous Oxygen Vent Arm Retract");
+                    break;
+                case -55:
+                    console.log("Switch to Internal Power");
+                    break;
+                case -31:
+                    this.computers.programHandler.exec("autoSequenceAndAscent", this.computers.gpc2);
+                    eventDownlink.postMessage(7);
+                    break;
+                case -16:
+                    console.log("Sound Suppression System");
+                    break;
+                case -10:
+                    console.log("Hydrogen Burn Off");
+                    break;
+                case 19:
+                    console.log("Pad Safing");
+                    clearInterval(GLS);
+                    break;
+            }
+        }, 1000);
+    }
 }
 
 
@@ -489,16 +499,31 @@ OV.rcsExtenderTanks.push(RCSExtE);
 
 
 app.get("/api/ov", (req, res) => {
-  //console.log("api/ov")
-  res.json(OV);
+    //console.log("api/ov")
+    res.json(OV);
 });
 
 app.post("/launch", (req, res) => {
-  console.log("Launch!");
-  OV.metUpdaterLoop();
-  OV.GroundLaunchSequencer();
-  OV.IMU.update();
-  res.json({ok: true})
+    console.log("Launch!");
+    OV.metUpdaterLoop();
+    OV.GroundLaunchSequencer();
+    OV.IMU.update();
+    res.json({ ok: true })
+})
+
+// CLAS
+app.post("/api/ov/abort", (req, res) => {
+    OV.computers.programHandler.exec("abort", OV.computers.gpc1);
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/arm", (req, res) => {
+    OV.computers.clasComputer.armState = true;
+    res.json({ ok: true });
+})
+app.post("/api/ov/clas/off", (req, res) => {
+    OV.computers.clasComputer.armState = false;
+    res.json({ ok: true });
 })
 
 
@@ -507,8 +532,8 @@ app.post("/launch", (req, res) => {
 // Landing Gear
 
 app.post("/api/ov/gearDown", (req, res) => {
-  OV.gearController.release();
-  res.json({ ok: true });
+    OV.gearController.release();
+    res.json({ ok: true });
 });
 
 
@@ -516,20 +541,20 @@ app.post("/api/ov/gearDown", (req, res) => {
 // OMS
 
 app.post("/api/ov/lOMS/arm", (req, res) => {
-  OV.oms.l.enableArm();
-  res.json({ ok: true });
+    OV.oms.l.enableArm();
+    res.json({ ok: true });
 })
 app.post("/api/ov/lOMS/disarm", (req, res) => {
-  OV.oms.l.disableArm();
-  res.json({ ok: true });
+    OV.oms.l.disableArm();
+    res.json({ ok: true });
 })
 app.post("/api/ov/rOMS/arm", (req, res) => {
-  OV.oms.r.enableArm();
-  res.json({ ok: true });
+    OV.oms.r.enableArm();
+    res.json({ ok: true });
 })
 app.post("/api/ov/rOMS/disarm", (req, res) => {
-  OV.oms.r.disableArm();
-  res.json({ ok: true });
+    OV.oms.r.disableArm();
+    res.json({ ok: true });
 })
 
 
@@ -538,30 +563,30 @@ app.post("/api/ov/rOMS/disarm", (req, res) => {
 // Control Takeover
 
 app.post("/api/ov/takeOver", (req, res) => {
-  console.log("aaa");
-  OV.software.pilotTakeover = true;
-  res.json({ ok: true })
+    console.log("aaa");
+    OV.software.pilotTakeover = true;
+    res.json({ ok: true })
 })
 app.post("/api/ov/takeOverReset", (req, res) => {
-  console.log("bbb");
-  OV.software.pilotTakeover = false;
-  res.json({ ok: true })
+    console.log("bbb");
+    OV.software.pilotTakeover = false;
+    res.json({ ok: true })
 })
 const MAX_RATE = 90; // deg/sec
 let yaw = 0;
 app.post("/api/ov/mergeControls", (req, res) => {
-  console.log(req.body);
-  const { axis } = req.body;
-  console.log(axis)
-  let pitchRate;
-  if (OV.IMU.roll > 90 || OV.IMU.roll < -90) {
-    pitchRate = axis[1] * MAX_RATE / 50 * -1;
-  } else {
-    pitchRate = axis[1] * MAX_RATE / 50;
-  }
-  const rollRate = -(axis[0] * MAX_RATE / 10);
-  const yawRate = yaw || 0;
-  res.json({ ok: true })
+    console.log(req.body);
+    const { axis } = req.body;
+    console.log(axis)
+    let pitchRate;
+    if (OV.IMU.roll > 90 || OV.IMU.roll < -90) {
+        pitchRate = axis[1] * MAX_RATE / 50 * -1;
+    } else {
+        pitchRate = axis[1] * MAX_RATE / 50;
+    }
+    const rollRate = -(axis[0] * MAX_RATE / 10);
+    const yawRate = yaw || 0;
+    res.json({ ok: true })
 })
 
 
@@ -569,17 +594,17 @@ app.post("/api/ov/mergeControls", (req, res) => {
 // Screens 
 
 app.post("/api/ov/cdr_pfd2", (req, res) => {
-  const { tab } = req.body;
-  console.log(tab)
-  OV.screens.cdr_pfd2 = tab;
-  res.json({ ok: true })
+    const { tab } = req.body;
+    console.log(tab)
+    OV.screens.cdr_pfd2 = tab;
+    res.json({ ok: true })
 })
 
 app.post("/api/ov/cdr_sfd1", (req, res) => {
-  const { tab } = req.body;
-  console.log(tab)
-  OV.screens.cdr_sfd1 = tab;
-  res.json({ ok: true })
+    const { tab } = req.body;
+    console.log(tab)
+    OV.screens.cdr_sfd1 = tab;
+    res.json({ ok: true })
 })
 
 
@@ -587,17 +612,37 @@ app.post("/api/ov/cdr_sfd1", (req, res) => {
 // Abort Modes
 
 app.post("/api/ov/abortMode/SE", (req, res) => {
-  const { mode } = req.body;
-  OV.intactAbortMode.singleEngine = mode;
+    const { mode } = req.body;
+    OV.intactAbortMode.singleEngine = mode;
 })
 app.post("/api/ov/abortMode/2E", (req, res) => {
-  const { mode } = req.body;
-  OV.intactAbortMode.twoEngine = mode;
+    const { mode } = req.body;
+    OV.intactAbortMode.twoEngine = mode;
 })
 
 app.post("/api/ov/abortMode/3E", (req, res) => {
-  const { mode } = req.body;
-  OV.intactAbortMode.threeEngine = mode;
+    const { mode } = req.body;
+    OV.intactAbortMode.threeEngine = mode;
+})
+
+
+
+
+// Cockpit
+
+app.post("/api/cockpit/switches/:switch", (req, res) => {
+    let switchId = req.params.switch;
+    const { pos } = req.body;
+
+    switchId = switchId.toString();
+    console.log("ID: " + switchId + ", " + pos);
+    
+        Object(OV.switches)[switchId] = pos;
+        console.log(Object(OV.switches))
+        console.log(OV.switches.switchId)
+
+    //console.log(global)
+    res.json({ ok: true });
 })
 
 
@@ -614,21 +659,21 @@ app.post("/api/ov/abortMode/3E", (req, res) => {
 const eventDownlink = new BroadcastChannel('downlink_event');
 let eventCodeHistory = [];
 eventDownlink.onmessage = (e) => {
-  eventCodeHistory.push([new Date(), e.data]);
+    eventCodeHistory.push([new Date(), e.data]);
 }
 
 app.get("/api/mc/ov", (req, res) => {
-  res.json(OV);
+    res.json(OV);
 });
 
 app.post("/api/mc/terminate", (req, res) => {
-  const { part } = req.body;
-  const fts_channel = new BroadcastChannel("FTS Uplink");
-  fts_channel.postMessage(["terminateConfirm", part])
+    const { part } = req.body;
+    const fts_channel = new BroadcastChannel("FTS Uplink");
+    fts_channel.postMessage(["terminateConfirm", part])
 })
 
 app.get("/api/mc/ov/events", (req, res) => {
-  res.json(eventCodeHistory);
+    res.json(eventCodeHistory);
 })
 
 
@@ -641,70 +686,70 @@ app.get("/api/mc/ov/events", (req, res) => {
 ///////////////////
 
 setInterval(() => { //SSME Handler
-  OV.ssmeHandler.update();
+    OV.ssmeHandler.update();
 }, 50); // 20 Hz (matches your GPC / IMU rate)
 
 setInterval(() => { //ET Fuel Deplete
-  if (OV) {
-    OV.et.drain(OV.ssme.ctr, OV.ssme.l, OV.ssme.r);
-  }
-  //console.log(OV.et);
+    if (OV) {
+        OV.et.drain(OV.ssme.ctr, OV.ssme.l, OV.ssme.r);
+    }
+    //console.log(OV.et);
 }, 100)
 
 setInterval(() => {
-  if (OV) {
-    if (OV.SRBs.l.ignited && OV.SRBs.l.propellantMass > 0) {
-      OV.SRBs.l.propellantMass -= 4028;
+    if (OV) {
+        if (OV.SRBs.l.ignited && OV.SRBs.l.propellantMass > 0) {
+            OV.SRBs.l.propellantMass -= 4028;
+        }
+        if (OV.SRBs.r.ignited && OV.SRBs.r.propellantMass > 0) {
+            OV.SRBs.r.propellantMass -= 4028;
+        }
     }
-    if (OV.SRBs.r.ignited && OV.SRBs.r.propellantMass > 0) {
-      OV.SRBs.r.propellantMass -= 4028;
-    }
-  }
 }, 100);
 let vel = 0;
 setInterval(() => {
-  let totalMass = 0;
-  let totalForce = 0;
-  let accel = 0;
-  if (OV) {
-    totalMass += 101000;
-    if (!OV.et.jettisoned) {
-      totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
+    let totalMass = 0;
+    let totalForce = 0;
+    let accel = 0;
+    if (OV) {
+        totalMass += 101000;
+        if (!OV.et.jettisoned) {
+            totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
+        }
+        if (!OV.SRBs.l.seperated) {
+            totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
+            if (OV.SRBs.l.ignited) {
+                totalForce += 13300;
+            }
+        }
+        if (!OV.SRBs.r.seperated) {
+            totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
+            if (OV.SRBs.r.ignited) {
+                totalForce += 13300;
+            }
+        }
+        totalForce += (((OV.ssme.ctr.thrust * 2787) / 100) / 10 + ((OV.ssme.l.thrust * 2787) / 100) / 10 + ((OV.ssme.r.thrust * 2787) / 100) / 10);
+        accel = totalMass / totalForce;
+        vel = accel * 0.1 - vel;
+        //console.log(vel);
     }
-    if (!OV.SRBs.l.seperated) {
-      totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
-      if (OV.SRBs.l.ignited) {
-        totalForce += 13300;
-      }
-    }
-    if (!OV.SRBs.r.seperated) {
-      totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
-      if (OV.SRBs.r.ignited) {
-        totalForce += 13300;
-      }
-    }
-    totalForce += (((OV.ssme.ctr.thrust * 2787) / 100)/10 + ((OV.ssme.l.thrust * 2787) / 100)/10 + ((OV.ssme.r.thrust * 2787) / 100)/10);
-    accel = totalMass / totalForce;
-    vel = accel * 0.1 - vel;
-    console.log(vel);
-  }
 }, 100);
-    
 
 
-setInterval(() => {  // Not working right now, reworking physics and location system
-  const telemetry = OV.mission.telemetryPos;
 
-  // Compute current GPS position from telemetry
-  const state = OV.computers.gpsComp.getPositionFromTelemetry(telemetry);
-  state.met = OV.mission.met;
-  state.range = telemetry.downrange_m / 1000; // km for cross-range calculations
+setInterval(() => { // Not working right now, reworking physics and location system
+    const telemetry = OV.mission.telemetryPos;
 
-  // Compute abort guidance
-  const guidance = OV.computers.guidanceComp.getGuidance(state);
-  if (guidance) {
-    //console.log(`MET ${state.met}: ABORT to ${guidance.site} (${guidance.mode})`);
-  }
+    // Compute current GPS position from telemetry
+    const state = OV.computers.gpsComp.getPositionFromTelemetry(telemetry);
+    state.met = OV.mission.met;
+    state.range = telemetry.downrange_m / 1000; // km for cross-range calculations
+
+    // Compute abort guidance
+    const guidance = OV.computers.guidanceComp.getGuidance(state);
+    if (guidance) {
+        //console.log(`MET ${state.met}: ABORT to ${guidance.site} (${guidance.mode})`);
+    }
 }, 1000);
 
 
@@ -722,11 +767,5 @@ setInterval(() => {  // Not working right now, reworking physics and location sy
 
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
+    console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
-
-
-
-
-
-
