@@ -683,7 +683,7 @@ setInterval(() => {
         totalForce += 13300;
       }
     }
-    totalForce += (((OV.ssme.ctr.thrust * 1817) / 104.5)/10 + ((OV.ssme.l.thrust * 1817) / 104.5)/10 + ((OV.ssme.r.thrust * 1817) / 104.5)/10);
+    totalForce += (((OV.ssme.ctr.thrust * 2787) / 100)/10 + ((OV.ssme.l.thrust * 2787) / 100)/10 + ((OV.ssme.r.thrust * 2787) / 100)/10);
     accel = totalMass / totalForce;
     vel = accel * 0.1 - vel;
     console.log(vel);
@@ -724,6 +724,7 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
+
 
 
 
