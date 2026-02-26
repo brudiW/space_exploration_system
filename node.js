@@ -12,7 +12,6 @@ import { Orbitalmodell } from "./orbitModell.js";
 
 // Simulation init
 
-// Pos Vectors
 let groundVector = new Vector(0, 0, 0); //x,y,z (xy-Ebene = Äquator); Position on the ground
 let locationVector = new Vector(0, 0, 0); // Position mit Höhe einberechnet
 
@@ -21,6 +20,14 @@ let globalFacingVector = new Vector(0, 0, 0); // beschreibt "vorwärts" (local p
 let facingVector = new Vector(0, 0, 0); // Blickrichtung des Fahrzeuges an den globalen Koordinatenachsen ausgerichtet
 
 let thrustVector = new Vector(0, 0, 0); // Der Schubvektor des Fahrzeugs, an den globalen Koordinatenachsen ausgerichtet
+
+let gv = CoordsToGroundVector(0, 0)
+console.log(gv)
+groundVector = new Vector(gv.x, gv.y, gv.z);
+let lv = groundVectorToLocationVector(gv.x, gv.y, gv.z, 0);
+locationVector = new Vector(lv.x, lv.y, lv.z)
+let gfv = groundVectorToLocalFacingVector(gv.x, gv.y, gv.z);
+
 
 
 
@@ -86,7 +93,6 @@ import { Parachute } from "./systems/hardware/parachutes.js";
 
 import { GPSComputer, AbortGuidance } from "./systems/hardware/gpsComputer.js";
 import { ok } from 'assert';
-import { Vector } from 'vector-math';
 
 
 
@@ -705,53 +711,96 @@ setInterval(() => {
             OV.SRBs.r.propellantMass -= 4028;
         }
     }
-}, 100);
-let vel = 0;
-setInterval(() => {
+}, 1000);
+
+// Pitch/Yaw in Grad → Richtung im Raum
+function getThrustVector(pitchDeg, yawDeg) {
+    const pitch = pitchDeg * Math.PI / 180;
+    const yaw = yawDeg * Math.PI / 180;
+
+    // Annahme: z = vertikal, x = horizontal Richtung des Fluges
+    const x = Math.cos(pitch) * Math.sin(yaw);
+    const y = Math.sin(pitch);         // vertikalkomponente
+    const z = Math.cos(pitch) * Math.cos(yaw);
+
+    return { x, y, z };
+}
+
+let vel = 1;
+let height = 0;
+let dr = 0;
+let aero;
+const physicsCycle = setInterval(() => {
     let totalMass = 0;
     let totalForce = 0;
     let accel = 0;
+    let accelL = 0;
+    let cw = 0;
     if (OV) {
-        totalMass += 101000;
+        totalMass += 125000;
         if (!OV.et.jettisoned) {
             totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
         }
         if (!OV.SRBs.l.seperated) {
             totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
             if (OV.SRBs.l.ignited) {
-                totalForce += 13300;
+                totalForce += 13300000;
             }
         }
         if (!OV.SRBs.r.seperated) {
             totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
             if (OV.SRBs.r.ignited) {
-                totalForce += 13300;
+                totalForce += 13300000;
             }
         }
-        totalForce += (((OV.ssme.ctr.thrust * 2787) / 100) / 10 + ((OV.ssme.l.thrust * 2787) / 100) / 10 + ((OV.ssme.r.thrust * 2787) / 100) / 10);
-        accel = totalMass / totalForce;
-        vel = accel * 0.1 - vel;
-        //console.log(vel);
+        totalForce += (((OV.ssme.ctr.thrust * 2278000) / 100) / 10 + ((OV.ssme.l.thrust * 2278000) / 100) / 10 + ((OV.ssme.r.thrust * 2278000) / 100) / 10);
+        if (vel === NaN) { vel = 1 }
+        aero = computeAthmospere(height, vel * 3.6, 10);
+        if (totalForce > 0) {
+            //console.log(aero)
+            cw = 1 / (aero.dynamic_pressure * 249909);
+            if (cw === NaN) { cw = 1; }
+            accelL = cw * aero.density * (249909 / (2 * totalMass)) * vel * vel;
+            if (totalForce / totalMass > 0.35) {
+                accel = totalForce / totalMass;
+                if (accel > 10) { accel = accel / 2 } else if (accel < 3) { accel = accel * 9.81 }
+                accel = accel - accelL;
+                vel = accel * 0.1 + vel;
+                if (OV.IMU.pitch > 89) {
+                    height += vel / 10;
+                } else if (OV.IMU.pitch < 2) {
+                    dr += vel / 10;
+                } else {
+                    let h = ((vel) * Math.sin((Math.PI / 180) * OV.IMU.pitch)) / Math.sin((Math.PI / 180) * 90);
+                    height += h / 10;
+                    dr += Math.sqrt(vel * vel - h * h) / 10;
+                }
+            }
+        }
+        OV.mission.telemetryPos.V = vel * 3.6;
+        OV.mission.telemetryPos.alt_m = height;
+        OV.mission.telemetryPos.downrange_m = dr;
+        OV.mission.telemetryPos.mach = aero.mach_speed;
+        //console.log("m: " + Number(totalMass).toFixed(2) + ", f: " + Number(totalForce).toFixed(2) + ", twr: " + Number(totalForce / totalMass).toFixed(2) + ", a: " + Number(accel).toFixed(2) + ", v: " + Number(vel).toFixed(2) + ", g: " + (Number((totalForce/totalMass)/9.81).toFixed(2)) + ", h: " + Number(height).toFixed(2) + ", dr: " + Number(dr).toFixed(2) + ", p: " + Number(OV.IMU.pitch).toFixed(2) + ", " + Number(Math.sin((Math.PI/180)*OV.IMU.pitch)).toFixed(2));
+        if (OV.mission.met > 510) {
+            clearInterval(physicsCycle);
+        }
     }
 }, 100);
 
+let physicsModel = "ascent";
 
 
-setInterval(() => { // Not working right now, reworking physics and location system
-    const telemetry = OV.mission.telemetryPos;
-
-    // Compute current GPS position from telemetry
-    const state = OV.computers.gpsComp.getPositionFromTelemetry(telemetry);
-    state.met = OV.mission.met;
-    state.range = telemetry.downrange_m / 1000; // km for cross-range calculations
-
-    // Compute abort guidance
-    const guidance = OV.computers.guidanceComp.getGuidance(state);
-    if (guidance) {
-        //console.log(`MET ${state.met}: ABORT to ${guidance.site} (${guidance.mode})`);
+setInterval(() => {  // Not working right now, reworking physics and location system
+    if (physicsModel == "ascent") {
+        let pos = destinationPoint(0, 0, dr, 119);
+        gv = CoordsToGroundVector(pos.lat, pos.lon);
+        groundVector = new Vector(gv.x, gv.y, gv.z);
+        lv = groundVectorToLocationVector(gv.x, gv.y, gv.z);
+        locationVector = new Vector(lv.x, lv.y, lv.z);
+        console.log(pos);
     }
 }, 1000);
-
 
 
 
@@ -769,3 +818,4 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
+
