@@ -90,3 +90,25 @@ export function computeAthmospere(h = 0, v = 0, rl = 10) {
     turbular_flow: cfturb
   };
 }
+export function destinationPoint(lat, lon, distance, bearing) {
+  const φ1 = lat * Math.PI / 180;
+  const λ1 = lon * Math.PI / 180;
+  const θ = bearing * Math.PI / 180;
+  const δ = distance / rEarth;
+
+  const φ2 = Math.asin(
+    Math.sin(φ1) * Math.cos(δ) +
+    Math.cos(φ1) * Math.sin(δ) * Math.cos(θ)
+  );
+
+  const λ2 = λ1 + Math.atan2(
+    Math.sin(θ) * Math.sin(δ) * Math.cos(φ1),
+    Math.cos(δ) - Math.sin(φ1) * Math.sin(φ2)
+  );
+
+  return {
+    lat: φ2 * 180 / Math.PI,
+    lon: λ2 * 180 / Math.PI
+  };
+}
+
