@@ -1,10 +1,13 @@
-let OV = {};
+globalThis.OV = {};
 async function loadOV() {
     const resp = await fetch("/api/ov");
-    OV = await resp.json();
-    requestAnimationFrame(loadOV)
+    globalThis.OV = await resp.json();
+    requestAnimationFrame(loadOV);
+    return;
 }
-loadOV();
+(async () => (
+    await loadOV()
+))()
 let screens = {
     cdr_pfd1: null,
     cdr_pfd2: null,
