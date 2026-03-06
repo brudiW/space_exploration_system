@@ -15,7 +15,7 @@ export class ET {
                 this.lh2 -= (((ctr.thrust * 70.3) / 104.5)/10 + ((l.thrust * 70.3) / 104.5)/10 + ((r.thrust * 70.3) / 104.5)/10);
                 this.lox -= (((ctr.thrust * 423.65) / 104.5)/10 + ((l.thrust * 423.65) / 104.5)/10 + ((r.thrust * 423.65) / 104.5)/10);
             } else {
-                OV.computers.programmHanndler.exec("SSMEshutDown", OV.computers.gpc4);
+                OV.computers.programHandler.exec("SSMEshutDown", OV.computers.gpc4);
             }
         }
     }
