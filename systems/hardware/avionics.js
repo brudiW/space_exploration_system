@@ -21,6 +21,7 @@ export class Elevon {
     }
     setTarget(targetPos) {
         this.targetPos = targetPos;
+        this.pos = targetPos;
     }
 }
 export class BodyFlap {
@@ -46,6 +47,7 @@ export class BodyFlap {
     }
     setTarget(targetPos) {
         this.targetPos = targetPos;
+        this.pos = targetPos;
     }
 }
 export class RudderBrake { // Rudder/Speedbrake
@@ -89,8 +91,10 @@ export class RudderBrake { // Rudder/Speedbrake
     }
     setTarget(targetPos) {
         this.targetPos = targetPos;
+        this.pos = targetPos;
     }
     setDeployTarget(deployTarget) {
         this.deployTarget = deployTarget;
+        this.deployPos = deployTarget;
     }
 }
