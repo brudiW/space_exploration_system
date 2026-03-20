@@ -88,7 +88,18 @@ export class FlyByWireComputer {
                 let diffR = (this.lastRates.r - roll) * -1;
                 let diffY = (this.lastRates.y - yaw) * -1;
                 if (diffP > 0) {
-                    OV.rcsController.pods[0].rcsPod[0].groups[1].open();
+                    //OV.rcsController.pods[0].rcsPod[0].groups[1].open(); // Front Forward
+                    OV.rcsController.pods[0].rcsPod[0].groups[3].open(); // Front Left Roll Clockwise
+                    OV.rcsController.pods[0].rcsPod[0].groups[6].open(); // Front Right Roll Anticlockwise
+                    OV.rcsController.pods[1].rcsPod[0].groups[0].open(); // Aft Left Up
+                    OV.rcsController.pods[2].rcsPod[0].groups[0].open(); // Aft Right Up
+				} else if (diffP < 0) {
+                    OV.rcsController.pods[0].rcsPod[0].groups[0].open(); // Front Up
+                    OV.rcsController.pods[0].rcsPod[0].groups[4].open(); // Front Left Roll Anticlockwise
+                    OV.rcsController.pods[0].rcsPod[0].groups[7].open(); // Front Right Roll Clockwise
+                    OV.rcsController.pods[1].rcsPod[0].groups[3].open(); // Aft Left Down
+                    OV.rcsController.pods[2].rcsPod[0].groups[3].open(); // Aft Right Down
+				}
              	//RCS Front Up
 const RCSfU = new RCSGroup("RCS Front Up", [new RCSThruster(), new RCSThruster(), new RCSThruster]);
 const RCSfF = new RCSGroup("RCS Front Forward", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
