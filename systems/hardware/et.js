@@ -8,6 +8,7 @@ export class ET {
         this.lh2Press = 225.00;
         this.emptyMass = 29900;
         this.jettisoned = false;
+        this.TERMINATED = false;
     }
     drain(ctr, l, r) {
         if (!this.jettisoned) {
