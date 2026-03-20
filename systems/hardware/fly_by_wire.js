@@ -84,7 +84,51 @@ export class FlyByWireComputer {
 
             }
             if (this.lastRates.p != p || this.lastRates.r != roll || this.lastRates.y != yaw) {
-                
+                let diffP = (this.lastRates.p - p) * -1;
+                let diffR = (this.lastRates.r - roll) * -1;
+                let diffY = (this.lastRates.y - yaw) * -1;
+                if (diffP > 0) {
+                    OV.rcsController.pods[0].rcsPod[0].groups[1].open();
+             	//RCS Front Up
+const RCSfU = new RCSGroup("RCS Front Up", [new RCSThruster(), new RCSThruster(), new RCSThruster]);
+const RCSfF = new RCSGroup("RCS Front Forward", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
+
+//RCS Front Left
+const RCSfL = new RCSGroup("RCS Front Left", [new RCSThruster(), new RCSThruster()]);
+const RCSfLrC = new RCSGroup("RCS Front Left Roll Clockwise", [new RCSThruster()]);
+const RCSfLrA = new RCSGroup("RCS Front Left Roll Anticlockwise", [new RCSThruster()]);
+
+//RCS Front Right
+const RCSfR = new RCSGroup("RCS Front Right", [new RCSThruster(), new RCSThruster()]);
+const RCSfRrA = new RCSGroup("RCS Front Right Roll Anticlockwise", [new RCSThruster()]);
+const RCSfRrC = new RCSGroup("RCS Front Right Roll Clockwise", [new RCSThruster()]);
+
+const RCSfP = new RCSPod("RCS Front", [RCSfU, RCSfF, RCSfL, RCSfLrC, RCSfLrA, RCSfR, RCSfRrA, RCSfRrC]);
+const PodFront = new Pod("Front", [], [RCSfP]);
+
+
+
+//RCS Aft Left
+const RCSaLu = new RCSGroup("RCS Aft Left Up", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
+const RCSaLl = new RCSGroup("RCS Aft Left Left", [new RCSThruster(), new RCSThruster(), new RCSThruster(), new RCSThruster()]);
+const RCSaLa = new RCSGroup("RCS Aft Left Aft", [new RCSThruster(), new RCSThruster()]);
+const RCSaLd = new RCSGroup("RCS Aft Left Down", [new RCSThruster(), new RCSThruster()]);
+
+const RCSaLp = new RCSPod("PCS Aft Left", [RCSaLu, RCSaLl, RCSaLa, RCSaLd]);
+const PodAftLeft = new Pod("Aft Left", [OMSl], [RCSaLp]);
+
+
+//RCS Aft Right
+const RCSaRu = new RCSGroup("RCS Aft Right Up", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
+const RCSaRr = new RCSGroup("RCS Aft Right Left", [new RCSThruster(), new RCSThruster(), new RCSThruster(), new RCSThruster()]);
+const RCSaRa = new RCSGroup("RCS Aft Right Aft", [new RCSThruster(), new RCSThruster()]);
+const RCSaRd = new RCSGroup("RCS Aft Right Down", [new RCSThruster(), new RCSThruster()]);
+
+const RCSaRp = new RCSPod("PCS Aft Right", [RCSaRu, RCSaRr, RCSaRa, RCSaRd]);
+const PodAftRight = new Pod("Aft Right", [OMSr], [RCSaRp]);
+
+const RCS_OMS = new ReactionControlSystemController([PodFront, PodAftLeft, PodAftRight]);
+
             this.lastRates = {p: p, r: roll, y: yaw};
         }
     }
