@@ -5,8 +5,7 @@ export class FlyByWireComputer {
 
         const imu_event = new BroadcastChannel("imu_event");
         imu_event.onmessage = (e) => {
-            const d = global.OV.IMU;
-            this.handleMove(d[0], d[1], d[2]);
+            this.handleMove(OV.IMU.prate, OV.IMU.rrate, OV.IMU.yrate);
 
 
         }
