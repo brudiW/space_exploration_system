@@ -1,5 +1,6 @@
 export class FlyByWireComputer {
     constructor() {
+        this.lastRates = {p: 0, r: 0, y: 0};
 
 
 
@@ -82,6 +83,9 @@ export class FlyByWireComputer {
                 });
 
             }
+            if (this.lastRates.p != p || this.lastRates.r != roll || this.lastRates.y != yaw) {
+                
+            this.lastRates = {p: p, r: roll, y: yaw};
         }
     }
 }
