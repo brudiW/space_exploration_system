@@ -23,6 +23,7 @@ export class SRB {
         this.propellantMass = 503500;
         this.emptyMass = 86200;
         this.seperated = false;
+        this.TERMINATED = false;
     }
     ignite() {
         this.ignited = true;
