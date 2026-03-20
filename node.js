@@ -651,6 +651,12 @@ app.post("/api/cockpit/switches/:switch", (req, res) => {
     res.json({ ok: true });
 })
 
+app.post("/api/ov/dskb/keyPress", (req, res) => {
+	const { keyId } = req.body;
+    console.log(keyId);
+    res.json({ok: true});
+});
+
 
 
 
@@ -680,6 +686,20 @@ app.post("/api/mc/terminate", (req, res) => {
 
 app.get("/api/mc/ov/events", (req, res) => {
     res.json(eventCodeHistory);
+})
+
+
+
+
+
+
+
+////////////////////
+// PHYSICS ENGINE //
+////////////////////
+
+app.get("/api/sim/objects", (req, res) => {
+    res.json(physicsEngine.spaceObjects);
 })
 
 
