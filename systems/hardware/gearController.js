@@ -26,7 +26,7 @@ export class Gear {
         this.locked = false; // true when extended and locked
     }
     getDL() {
-        if (this.position = "extended" && this.locked) {
+        if (this.position == "extended" && this.locked) {
             return true;
         } else {
             return false;
