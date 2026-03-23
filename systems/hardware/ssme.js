@@ -79,7 +79,7 @@ export class SSME {
         if (Math.abs(error) <= maxStep) {
             this.thrust = this.targetThrust;
             this.startup = false;
-            this.shtdwn = false;
+            //this.shtdwn = false;
         } else {
             this.thrust += Math.sign(error) * maxStep;
         }
