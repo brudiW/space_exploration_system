@@ -2,6 +2,11 @@
     "0": {
         "0": {
             "type": "bool",
+            "val": "1",
+            "perm": "r/w"
+        },
+        "1": {
+            "type": "bool",
             "val": "0",
             "perm": "r/w"
         }
