@@ -1,4 +1,6 @@
 globalThis.OV = {};
+let gamePadA;
+let aft = false;
 async function loadOV() {
     const resp = await fetch("/api/ov");
     globalThis.OV = await resp.json();
@@ -121,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Broadcast channel to IMU
     const rc = new BroadcastChannel("imu_rcv");
 
-    
+
     let yaw = 0; // optional
 
     // Combine joystick axes
@@ -133,6 +135,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateControls() {
+        if (navigator.getGamepads()[0]) {
+            gamePadA = navigator.getGamepads()[0]
+            //console.log(gamePadA)
+            if (gamePadA.buttons[0].pressed && !OV.software.pilotTakeover) {
+                (async () => {
+                    const resp = await fetch("/api/ov/takeOver", {
+                        method: "POST"
+                    });
+                    if (!resp.ok) return alert("ddd");
+                })();
+            } else if (!gamePadA.buttons[0].pressed && OV.software.pilotTakeover) {
+                (async () => {
+                    const resp = await fetch("/api/ov/takeOverReset", {
+                        method: "POST"
+                    });
+                    if (!resp.ok) return alert("eee");
+                })();
+            }
+            let pitch = gamePadA.axes[1];
+            let roll = gamePadA.axes[0];
+            //let yaw = gamePadA.axes[5] * 2 - 1;
+            let yaw = 0;
+            let throttle = (gamePadA.axes[6] + 1) / 2;
+            if (OV.software.pilotTakeover) {
+                if (aft) {
+                    (async () => {
+                        const resp = await fetch("/api/ov/externalStickInput", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ axis: [-pitch, -roll, yaw, throttle] })
+                        });
+                        if (!resp.ok) return alert("fffff")
+                    })();
+                } else {
+                    (async () => {
+                        const resp = await fetch("/api/ov/externalStickInput", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ axis: [pitch, roll, yaw, throttle] })
+                        });
+                        if (!resp.ok) return alert("fffff")
+                    })();
+                }
+            }
+            //console.log(pitch, roll, yaw, throttle)
+        }
         if (Object.values(OV).length > 0) {
             //console.log(OV);
             if (OV.software.pilotTakeover) {
@@ -147,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         method: "POST",
                         credentials: "include",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({axis: [mergedX, mergedY]})
+                        body: JSON.stringify({ axis: [mergedX, mergedY] })
                     })
                     if (!resp.ok) return alert("ERROR");
                 })()
@@ -159,3 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateControls();
 });
+ongamepadconnected = (event) => {
+    gamePadA = navigator.getGamepads()[0]
+    console.log(navigator.getGamepads())
+}
