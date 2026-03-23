@@ -3,37 +3,15 @@ import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
 import session from 'express-session';
-import 'vector-math';
+import THREE from 'three.js';
 
-import { CoordsToGroundVector, groundVectorToCoords, groundVectorToLocationVector } from "./calcTools.js";
+import { CoordsToGroundVector, groundVectorToCoords, groundVectorToLocalFacingVector, groundVectorToLocationVector, computeAthmospere, destinationPoint, distanceAndHeading } from "./calcTools.js";
 
 import { Orbitalmodell } from "./orbitModell.js";
+import { PhysicsEngine, SpaceObject, DockingPort } from './physicsEngine.js';
 
 
-// Simulation init
-
-let groundVector = new Vector(0, 0, 0); //x,y,z (xy-Ebene = Äquator); Position on the ground
-let locationVector = new Vector(0, 0, 0); // Position mit Höhe einberechnet
-
-let globalFacingVector = new Vector(0, 0, 0); // beschreibt "vorwärts" (local pitch und yaw = 0) an der aktuellen Position im Orbit und in der Athmosphäre
-
-let facingVector = new Vector(0, 0, 0); // Blickrichtung des Fahrzeuges an den globalen Koordinatenachsen ausgerichtet
-
-let thrustVector = new Vector(0, 0, 0); // Der Schubvektor des Fahrzeugs, an den globalen Koordinatenachsen ausgerichtet
-
-let gv = CoordsToGroundVector(0, 0)
-console.log(gv)
-groundVector = new Vector(gv.x, gv.y, gv.z);
-let lv = groundVectorToLocationVector(gv.x, gv.y, gv.z, 0);
-locationVector = new Vector(lv.x, lv.y, lv.z)
-let gfv = groundVectorToLocalFacingVector(gv.x, gv.y, gv.z);
-
-
-
-
-
-
-
+globalThis.physicsEngine = new PhysicsEngine();
 const orbit = new Orbitalmodell();
 
 
@@ -69,6 +47,7 @@ import { Pod, RCSGroup, RCSThruster, RCSPod, OMSPod, ReactionControlSystemContro
 
 import { CLASComputer } from "./systems/hardware/clas.js";
 import { GPC } from "./systems/hardware/gpc.js";
+import { DisplayKeyboardInterface, DynamicMemory } from './systems/hardware/dskb_memory.js';
 import { programHandler } from "./systems/hardware/programHandler.js";
 import { IMU } from './systems/hardware/imu.js';
 
@@ -92,6 +71,8 @@ import { GearController, Gear } from "./systems/hardware/gearController.js";
 import { Parachute } from "./systems/hardware/parachutes.js";
 
 import { GPSComputer, AbortGuidance } from "./systems/hardware/gpsComputer.js";
+
+import { RMS } from "./systems/hardware/rms.js";
 import { ok } from 'assert';
 
 
@@ -115,6 +96,8 @@ const gpc5 = new GPC(5);
 
 
 const programmHandler = new programHandler();
+const MEMORY = new DynamicMemory();
+const dskb = new DisplayKeyboardInterface();
 
 
 const imu = new IMU();
@@ -137,11 +120,15 @@ const abortSites = [{
 const gps = new GPSComputer(launchPoint, 78.5);
 const abortGuidance = new AbortGuidance(abortSites);
 
+let eventCodeHistory = [];
+
 
 
 
 // Screens
 /**/
+
+const rms = new RMS();
 
 
 
@@ -169,7 +156,7 @@ const OMSr = new OMSPod("OMS R");
 
 
 //RCS Front Up
-const RCSfU = new RCSGroup("RCS Front Up", [new RCSThruster(), new RCSThruster(), new RCSThruster]);
+const RCSfU = new RCSGroup("RCS Front Up", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
 const RCSfF = new RCSGroup("RCS Front Forward", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
 
 //RCS Front Left
@@ -263,6 +250,7 @@ const RCSExtB = new RCSExtenderTank("2", 100, 100, 150, 150);
 const RCSExtC = new RCSExtenderTank("3", 100, 100, 150, 150);
 const RCSExtD = new RCSExtenderTank("4", 100, 100, 150, 150);
 const RCSExtE = new RCSExtenderTank("5", 100, 100, 150, 150);
+let translateRate = { x: 0, y: 0, z: 0 }
 
 
 
@@ -292,7 +280,8 @@ class Orbiter {
             maneuverHandlerTool: maneuverHandlerTool,
             fbwComp: fbwComp,
             gpsComp: gps,
-            guidanceComp: abortGuidance
+            guidanceComp: abortGuidance,
+            dskb: dskb
         };
         this.screens = {
             cdr_pfd2: "menu",
@@ -300,6 +289,7 @@ class Orbiter {
             plt_pfd2: "menu",
         };
         this.IMU = imu;
+        this.RMS = rms;
         this.positionData = {
             mode: "global",
             x_accel: 0,
@@ -351,6 +341,7 @@ class Orbiter {
             mtr: 0,
             ft: 0
         };
+        this.memory = MEMORY;
         this.gearController = gearController;
         this.parachutes = {
             brake: brakeChute,
@@ -359,6 +350,13 @@ class Orbiter {
             mainC: mainCchute,
             backUpA: backUpChute
         };
+        this.dragChute = {
+            deployed: false,
+            jettisoned: false
+        }
+        this.brakes = {
+            applied: false
+        }
         this.ssmeHandler = ssmeHandler;
         this.mission = {
             met: 0,
@@ -366,7 +364,8 @@ class Orbiter {
                 V: 0,
                 alt_m: 0,
                 downrange_m: 0,
-                mach: 0
+                mach: 0,
+                g: 0
             }
         };
 
@@ -379,8 +378,10 @@ class Orbiter {
         this.software = {
             metTimer: null,
             pilotTakeover: false,
-            srbSepMode: "auto",
-            etSepMode: false,
+            srbSepMode: "auto", //"auto/man"
+            etSepMode: false, // true = man
+            ssmeShutdownInhibit: false,
+            onPad: true,
 
 
             missionMode: ""
@@ -404,10 +405,10 @@ class Orbiter {
             OV.mission.met++;
             switch (this.software.missionMode) {
                 case "auto-sequence":
-                    if (OV.inIntactAbort && OV.mission.met <= 0) {
+                    if ((OV.inIntactAbort || OV.inAbort) && OV.mission.met <= 0) {
                         console.log('Intact Pad Abort!');
                         OV.computers.programHandler.exec('SSMEshutDown', OV.computers.gpc2);
-                        clearInterval(metTimer);
+
                     }
                     break;
                 case "ascent":
@@ -425,7 +426,7 @@ class Orbiter {
     }
     GroundLaunchSequencer() {
         const eventDownlink = new BroadcastChannel("downlink_event");
-        this.mission.met = -60;
+        this.mission.met = -32;
         const GLS = setInterval(() => {
             switch (this.mission.met) {
                 case -450:
@@ -513,13 +514,36 @@ app.post("/launch", (req, res) => {
     console.log("Launch!");
     OV.metUpdaterLoop();
     OV.GroundLaunchSequencer();
-    OV.IMU.update();
+    res.json({ ok: true })
+})
+app.post("/rtls", (req, res) => {
+    OV.computers.maneuverHandlerTool.maneuverTo({ pitch: -179, roll: 0, yaw: 76.7 });
+    res.json({ ok: true })
+})
+app.post("/entry", (req, res) => {
+    physicsModel = "entry";
+    res.json({ ok: true })
+})
+app.post("/deorbit", (req, res) => {
+    OV.rcsController.pods[1].omsPod[0].throttle = 100.0;
+    OV.rcsController.pods[2].omsPod[0].throttle = 100.0;
+    setInterval(() => {
+        OV.rcsController.pods[1].omsPod[0].throttle = 0.0;
+        OV.rcsController.pods[2].omsPod[0].throttle = 0.0;
+    }, 135000);
     res.json({ ok: true })
 })
 
+app.post("/ISS/dock", (req, res) => {
+    physicsEngine.physicsObjects['ISS'].dockingPorts[0].dock(physicsEngine.physicsObjects['OV']);
+    res.json({ ok: true })
+})
+
+
 // CLAS
+
 app.post("/api/ov/abort", (req, res) => {
-    OV.computers.programHandler.exec("abort", OV.computers.gpc1);
+    OV.computers.clasComputer.trigger();
     res.json({ ok: true });
 })
 
@@ -531,6 +555,122 @@ app.post("/api/ov/clas/off", (req, res) => {
     OV.computers.clasComputer.armState = false;
     res.json({ ok: true });
 })
+
+
+
+// CLAS PARACHUTES
+
+app.post("/api/ov/clas/chutes/brake/deploy", (req, res) => {
+    OV.parachutes.brake.deploy();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/mainA/deploy", (req, res) => {
+    OV.parachutes.mainA.deploy();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/mainB/deploy", (req, res) => {
+    OV.parachutes.mainB.deploy();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/mainC/deploy", (req, res) => {
+    OV.parachutes.mainC.deploy();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/backUp/deploy", (req, res) => {
+    OV.parachutes.backUpA.deploy();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/brake/cut", (req, res) => {
+    OV.parachutes.brake.cut();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/mainA/cut", (req, res) => {
+    OV.parachutes.mainA.cut();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/mainB/cut", (req, res) => {
+    OV.parachutes.mainB.cut();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/mainC/cut", (req, res) => {
+    OV.parachutes.mainC.cut();
+    res.json({ ok: true });
+})
+
+app.post("/api/ov/clas/chutes/backUp/cut", (req, res) => {
+    OV.parachutes.backUpA.cut();
+    res.json({ ok: true });
+})
+
+
+
+// SSME
+
+app.post('/api/ov/ssme/l/shutdown', (req, res) => {
+    OV.ssme.l.shutDown();
+    res.json({ ok: true });
+})
+app.post('/api/ov/ssme/ctr/shutdown', (req, res) => {
+    OV.ssme.ctr.shutDown();
+    res.json({ ok: true });
+})
+app.post('/api/ov/ssme/r/shutdown', (req, res) => {
+    OV.ssme.r.shutDown();
+    res.json({ ok: true });
+})
+app.post('/api/ov/ssme/shutdown', (req, res) => {
+    globalThis.OV.ssmeHandler.shutDown();
+    res.json({ ok: true });
+})
+app.post('/api/ov/ssme/shutdownInhibit', (req, res) => {
+    OV.software.ssmeShutdownInhibit = !OV.software.ssmeShutdownInhibit;
+    res.json({ ok: true })
+})
+
+
+
+// SRB
+
+app.post("/api/ov/srb/sepMode", (req, res) => {
+    const { mode } = req.body;
+    OV.software.srbSepMode = mode;
+    res.json({ ok: true })
+})
+
+app.post("/api/ov/srb/sep", (req, res) => {
+    if (OV.software.srbSepMode == "man/auto") {
+        OV.srbHandler.seperate();
+    }
+    res.json({ ok: true })
+})
+
+
+
+// ET
+
+app.post("/api/ov/et/sepMode", (req, res) => {
+    const { mode } = req.body;
+    OV.software.etSepMode = mode;
+    res.json({ ok: true })
+})
+
+app.post("/api/ov/et/sep", (req, res) => {
+    if (OV.software.etSepMode) {
+        OV.et.seperate();
+    }
+    res.json({ ok: true })
+})
+
+
+
 
 
 
@@ -566,35 +706,112 @@ app.post("/api/ov/rOMS/disarm", (req, res) => {
 
 
 
-// Control Takeover
+// Control Takeover / IMU / RCS
+
+app.post("/api/ov/imu/setPos", (req, res) => {
+    const { axis } = req.body;
+})
+app.post("/api/ov/imu/resetPos", (req, res) => {
+    OV.IMU.pitch = 0;
+    OV.IMU.roll = 0;
+    OV.IMU.yaw = 0;
+})
 
 app.post("/api/ov/takeOver", (req, res) => {
-    console.log("aaa");
+    //console.log("aaa");
     OV.software.pilotTakeover = true;
     res.json({ ok: true })
 })
 app.post("/api/ov/takeOverReset", (req, res) => {
-    console.log("bbb");
+    //console.log("bbb");
     OV.software.pilotTakeover = false;
     res.json({ ok: true })
 })
-const MAX_RATE = 90; // deg/sec
+const MAX_RATE = 900; // deg/sec
 let yaw = 0;
 app.post("/api/ov/mergeControls", (req, res) => {
-    console.log(req.body);
+    //console.log(req.body);
     const { axis } = req.body;
-    console.log(axis)
+    //console.log(axis)
     let pitchRate;
     if (OV.IMU.roll > 90 || OV.IMU.roll < -90) {
-        pitchRate = axis[1] * MAX_RATE / 50 * -1;
+        pitchRate = axis[1] * MAX_RATE / 10 * -1;
     } else {
         pitchRate = axis[1] * MAX_RATE / 50;
     }
     const rollRate = -(axis[0] * MAX_RATE / 10);
     const yawRate = yaw || 0;
+    OV.IMU.setRates([pitchRate, rollRate, yawRate])
+    res.json({ ok: true })
+})
+app.post("/api/ov/externalStickInput", (req, res) => {
+    const { axis } = req.body;
+    let pitchRate;
+    if (OV.IMU.roll > 90 || OV.IMU.roll < -90) {
+        pitchRate = axis[0] * MAX_RATE * -1;
+    } else {
+        pitchRate = axis[0] * MAX_RATE;
+    }
+    const rollRate = -(axis[1] * MAX_RATE);
+    const yawRate = axis[2] * MAX_RATE;
+    OV.IMU.setRates([pitchRate, rollRate, yawRate])
+    res.json({ ok: true })
+})
+app.post("/api/ov/translate", (req, res) => {
+    const { axis } = req.body;
+    console.log(axis)
+    switch (axis) {
+        case "x+":
+            translateRate.x += 0.00200;
+            break;
+        case "x-":
+            translateRate.x += -0.00200;
+            break;
+        case "y+":
+            translateRate.y += 0.00200;
+            break;
+        case "y-":
+            translateRate.y += -0.00200;
+            break;
+        case "z+":
+            translateRate.z += 0.00200;
+            break;
+        case "z-":
+            translateRate.z += -0.00200;
+            break;
+    }
     res.json({ ok: true })
 })
 
+
+
+
+// Control Surfaces
+
+app.post("/api/ov/avionics/:surface/endisable", (req, res) => {
+    const surface = req.params.surface;
+    switch (surface) {
+        case "RelevonA":
+            OV.avionics.RelevonA.disabled = !OV.avionics.RelevonA.disabled;
+            break;
+        case "RelevonB":
+            OV.avionics.RelevonB.disabled = !OV.avionics.RelevonB.disabled;
+            break;
+        case "LelevonA":
+            OV.avionics.LelevonA.disabled = !OV.avionics.LelevonA.disabled;
+            break;
+        case "LelevonB":
+            OV.avionics.LelevonB.disabled = !OV.avionics.LelevonB.disabled;
+            break;
+        case "bodyflap":
+            OV.avionics.bodyflap.disabled = !OV.avionics.bodyflap.disabled;
+            break;
+        case "rudderBrake":
+            OV.avionics.rudderBrake.disabled = !OV.avionics.rudderBrake.disabled;
+            break;
+    }
+    res.json({ ok: true })
+})
 
 
 // Screens 
@@ -615,6 +832,7 @@ app.post("/api/ov/cdr_sfd1", (req, res) => {
 
 
 
+
 // Abort Modes
 
 app.post("/api/ov/abortMode/SE", (req, res) => {
@@ -631,6 +849,91 @@ app.post("/api/ov/abortMode/3E", (req, res) => {
     OV.intactAbortMode.threeEngine = mode;
 })
 
+app.post("/api/ov/intactAbort", (req, res) => {
+    OV.inIntactAbort = true;
+    //OV.computers.maneuverHandlerTool.maneuverTo({pitch: -179, roll: 0, yaw: 76.7})
+})
+
+
+
+// Drag Chute
+
+app.post("/api/ov/dragChute/deploy", (req, res) => {
+    OV.dragChute.deployed = true;
+    OV.brakes.applied = true;
+})
+
+app.post("/api/ov/dragChute/jettison", (req, res) => {
+    OV.dragChute.jettisoned = true;
+})
+
+
+
+// RMS
+
+app.post("/api/ov/rms/:joint", (req, res) => {
+    const joint = req.params.joint;
+    const { direction } = req.body;
+    switch (joint) {
+        case "shoulderYaw":
+            OV.RMS.shoulderYaw += direction;
+            break;
+        case "shoulderPitch":
+            OV.RMS.shoulderPitch += direction;
+            break;
+        case "elbowPitch":
+            OV.RMS.elbowPitch += direction;
+            break;
+        case "wristPitch":
+            OV.RMS.wristPitch += direction;
+            break;
+        case "wristYaw":
+            OV.RMS.wristYaw += direction;
+            break;
+    }
+    if (OV.RMS.shoulderYaw > 270) {
+        OV.RMS.shoulderYaw = 270;
+    }
+    if (OV.RMS.shoulderYaw < -90) {
+        OV.RMS.shoulderYaw = -90;
+    }
+    if (OV.RMS.shoulderPitch < -90) {
+        OV.RMS.shoulderPitch = -90;
+    }
+    if (OV.RMS.shoulderPitch > 55) {
+        OV.RMS.shoulderPitch = 55;
+    }
+    if (OV.RMS.elbowPitch > 0) {
+        OV.RMS.elbowPitch = 0;
+    }
+    if (OV.RMS.elbowPitch < -160) {
+        OV.RMS.elbowPitch = -160;
+    }
+    if (OV.RMS.wristPitch > 120) {
+        OV.RMS.wristPitch = 120;
+    }
+    if (OV.RMS.wristPitch < -120) {
+        OV.RMS.wristPitch = -120;
+    }
+    if (OV.RMS.wristYaw > 120) {
+        OV.RMS.wristYaw = 120;
+    }
+    if (OV.RMS.wristYaw < -120) {
+        OV.RMS.wristYaw = -120;
+    }
+    res.json({ok: true})
+})
+
+
+
+// DisplayKeyboard
+
+app.post("/api/ov/dskb/press", (req, res) => {
+    const {button} = req.body;
+    OV.computers.dskb.press(button)
+    res.json({ok: true})
+})
+
 
 
 
@@ -642,20 +945,14 @@ app.post("/api/cockpit/switches/:switch", (req, res) => {
 
     switchId = switchId.toString();
     console.log("ID: " + switchId + ", " + pos);
-    
-        Object(OV.switches)[switchId] = pos;
-        console.log(Object(OV.switches))
-        console.log(OV.switches.switchId)
+
+    Object(OV.switches)[switchId] = pos;
+    console.log(Object(OV.switches))
+    console.log(OV.switches.switchId)
 
     //console.log(global)
     res.json({ ok: true });
 })
-
-app.post("/api/ov/dskb/keyPress", (req, res) => {
-	const { keyId } = req.body;
-    console.log(keyId);
-    res.json({ok: true});
-});
 
 
 
@@ -669,7 +966,7 @@ app.post("/api/ov/dskb/keyPress", (req, res) => {
 //////////////////////////////
 
 const eventDownlink = new BroadcastChannel('downlink_event');
-let eventCodeHistory = [];
+
 eventDownlink.onmessage = (e) => {
     eventCodeHistory.push([new Date(), e.data]);
 }
@@ -690,16 +987,12 @@ app.get("/api/mc/ov/events", (req, res) => {
 
 
 
-
-
-
-
 ////////////////////
 // PHYSICS ENGINE //
 ////////////////////
 
 app.get("/api/sim/objects", (req, res) => {
-    res.json(physicsEngine.spaceObjects);
+    res.json(physicsEngine.physicsObjects);
 })
 
 
@@ -707,6 +1000,7 @@ app.get("/api/sim/objects", (req, res) => {
 
 
 
+OV.IMU.update();
 ///////////////////
 // SYSTEM RUNNER //
 ///////////////////
@@ -718,6 +1012,7 @@ setInterval(() => { //SSME Handler
 setInterval(() => { //ET Fuel Deplete
     if (OV) {
         OV.et.drain(OV.ssme.ctr, OV.ssme.l, OV.ssme.r);
+        OV.rcsController.pods.forEach(p => {p.drain()})
     }
     //console.log(OV.et);
 }, 100)
@@ -733,94 +1028,264 @@ setInterval(() => {
     }
 }, 1000);
 
-// Pitch/Yaw in Grad → Richtung im Raum
-function getThrustVector(pitchDeg, yawDeg) {
-    const pitch = pitchDeg * Math.PI / 180;
-    const yaw = yawDeg * Math.PI / 180;
+const OrbiterSpaceObject = new SpaceObject(0, "OV", { x: 6378137, y: 0, z:  0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, 0, 125000, true, [new DockingPort("ODS")], 249.9);
+const ISS = new SpaceObject(1, "ISS", { x: 6778137, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: -7672.3 * 3.6 }, { x: 0, y: 1, z: 0 }, 0, 125000, true, [new DockingPort("IDA2")], 100000);
+physicsEngine.add(OrbiterSpaceObject);
+physicsEngine.add(ISS);
 
-    // Annahme: z = vertikal, x = horizontal Richtung des Fluges
-    const x = Math.cos(pitch) * Math.sin(yaw);
-    const y = Math.sin(pitch);         // vertikalkomponente
-    const z = Math.cos(pitch) * Math.cos(yaw);
 
-    return { x, y, z };
+const EARTH_RADIUS = 6378137;
+const referenceArea = 249.9;
+
+
+function getAeroCoefficients(AoAdeg, mach) {
+
+    let cl = 0;
+    let cd = 0;
+
+    if (AoAdeg < 5) {
+        cl = 0.2;
+        cd = 0.2;
+    }
+    else if (AoAdeg < 15) {
+        cl = 0.6;
+        cd = 0.35;
+    }
+    else if (AoAdeg < 40) {
+        cl = 1.0;
+        cd = 1.1;
+    }
+    else {
+        cl = 0.8;
+        cd = 1.5;
+    }
+
+    if (mach > 5) cd *= 1.4;
+
+    return { cl, cd };
 }
 
-let vel = 1;
-let height = 0;
-let dr = 0;
+function getFacingVector() {
+    const up = physicsEngine.physicsObjects['OV'].locVec.clone().normalize();
+
+    // Stabiler Referenzvektor (verhindert Gimbal-Lock an den Polen)
+    let ref = new THREE.Vector3(0, 1, 0);
+    //if (Math.abs(up.dot(ref)) > 0.99) {
+    //    ref = new THREE.Vector3(1, 0, 0);
+    //}
+
+    // Lokales Koordinatensystem
+    const yaw = OV.IMU.yaw * Math.PI / 180;
+    const pitch = OV.IMU.pitch * Math.PI / 180;
+
+    const east = new THREE.Vector3().crossVectors(ref, up).normalize();
+    const north = new THREE.Vector3().crossVectors(up, east).normalize();
+
+    // === YAW (Heading) ===
+    const headingDir = north.clone().multiplyScalar(Math.cos(yaw))
+        .add(east.clone().multiplyScalar(Math.sin(yaw)));
+
+    // === PITCH ===
+    // WICHTIG: 90° = UP, 0° = HORIZONTAL
+
+    const horizontal = headingDir.clone().multiplyScalar(Math.cos(pitch));
+    const vertical = up.clone().multiplyScalar(Math.sin(pitch));
+
+    let facingVector = horizontal.add(vertical).normalize();
+    return [facingVector, horizontal, vertical];
+}
+
+let dt = 0.1;
 let aero;
+let physicsModel = "ascent";
+let lastvel = new THREE.Vector3();
 const physicsCycle = setInterval(() => {
-    let totalMass = 0;
-    let totalForce = 0;
-    let accel = 0;
-    let accelL = 0;
-    let cw = 0;
-    if (OV) {
-        totalMass += 125000;
-        if (!OV.et.jettisoned) {
-            totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
-        }
-        if (!OV.SRBs.l.seperated) {
-            totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
-            if (OV.SRBs.l.ignited) {
-                totalForce += 13300000;
+    const faceVecs = getFacingVector();
+    physicsEngine.physicsObjects['OV'].setFaceVecFromVector(faceVecs[0]); // Aktualisiert facingVector basierend auf IMU (Pitch/Yaw)
+    physicsEngine.physicsObjects['OV'].setUpFromVector(faceVecs[1]);
+    physicsEngine.physicsObjects['OV'].setTranslateRates(translateRate);
+    //console.log(translateRate)
+    lastvel = physicsEngine.physicsObjects['OV'].velVec;
+
+    //let distFromCenter = locationVector.length();
+
+    let h = physicsEngine.physicsObjects['OV'].locVec.length() - EARTH_RADIUS;
+
+    let totalMass = 125000; // Orbiter leer
+    let totalThrustN = 0;
+    // Massen-Updates (ET, SRBs, Treibstoff)
+    if (OV.computers.clasComputer.triggerState) {
+        totalMass = 29000; // Forward Fuselage
+        for (let i = 0; i < OV.computers.clasComputer.SRMs.length; i++) {
+            if (OV.computers.clasComputer.SRMs[i].ignited) {
+                totalThrustN += 928000; // N
             }
         }
-        if (!OV.SRBs.r.seperated) {
-            totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
-            if (OV.SRBs.r.ignited) {
-                totalForce += 13300000;
-            }
+    } else {
+        if (!OV.et.jettisoned) totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
+        if (!OV.SRBs.l.seperated) totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
+        if (!OV.SRBs.r.seperated) totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
+
+        // 1. Schubkraft berechnen
+        if (h < 50000) {
+            totalThrustN += (OV.ssme.ctr.thrust / 100) * 1860000 +
+                (OV.ssme.l.thrust / 100) * 1860000 +
+                (OV.ssme.r.thrust / 100) * 1860000 +
+                (OV.rcsController.pods[1].omsPod[0].throttle / 100) * 26700 +
+                (OV.rcsController.pods[2].omsPod[0].throttle / 100) * 26700
+
+        } else {
+            totalThrustN += (OV.ssme.ctr.thrust / 100) * 2278000 +
+                (OV.ssme.l.thrust / 100) * 2278000 +
+                (OV.ssme.r.thrust / 100) * 2278000 +
+                (OV.rcsController.pods[1].omsPod[0].throttle / 100) * 26700 +
+                (OV.rcsController.pods[2].omsPod[0].throttle / 100) * 26700
         }
-        totalForce += (((OV.ssme.ctr.thrust * 2278000) / 100) / 10 + ((OV.ssme.l.thrust * 2278000) / 100) / 10 + ((OV.ssme.r.thrust * 2278000) / 100) / 10);
-        if (vel === NaN) { vel = 1 }
-        aero = computeAthmospere(height, vel * 3.6, 10);
-        if (totalForce > 0) {
-            //console.log(aero)
-            cw = 1 / (aero.dynamic_pressure * 249909);
-            if (cw === NaN) { cw = 1; }
-            accelL = cw * aero.density * (249909 / (2 * totalMass)) * vel * vel;
-            if (totalForce / totalMass > 0.35) {
-                accel = totalForce / totalMass;
-                if (accel > 10) { accel = accel / 2 } else if (accel < 3) { accel = accel * 9.81 }
-                accel = accel - accelL;
-                vel = accel * 0.1 + vel;
-                if (OV.IMU.pitch > 89) {
-                    height += vel / 10;
-                } else if (OV.IMU.pitch < 2) {
-                    dr += vel / 10;
-                } else {
-                    let h = ((vel) * Math.sin((Math.PI / 180) * OV.IMU.pitch)) / Math.sin((Math.PI / 180) * 90);
-                    height += h / 10;
-                    dr += Math.sqrt(vel * vel - h * h) / 10;
-                }
-            }
-        }
-        OV.mission.telemetryPos.V = vel * 3.6;
-        OV.mission.telemetryPos.alt_m = height;
-        OV.mission.telemetryPos.downrange_m = dr;
-        OV.mission.telemetryPos.mach = aero.mach_speed;
-        //console.log("m: " + Number(totalMass).toFixed(2) + ", f: " + Number(totalForce).toFixed(2) + ", twr: " + Number(totalForce / totalMass).toFixed(2) + ", a: " + Number(accel).toFixed(2) + ", v: " + Number(vel).toFixed(2) + ", g: " + (Number((totalForce/totalMass)/9.81).toFixed(2)) + ", h: " + Number(height).toFixed(2) + ", dr: " + Number(dr).toFixed(2) + ", p: " + Number(OV.IMU.pitch).toFixed(2) + ", " + Number(Math.sin((Math.PI/180)*OV.IMU.pitch)).toFixed(2));
-        if (OV.mission.met > 510) {
-            clearInterval(physicsCycle);
-        }
+
+
+        if (OV.SRBs.l.ignited && !OV.SRBs.l.seperated) totalThrustN += 13300000;
+        if (OV.SRBs.r.ignited && !OV.SRBs.r.seperated) totalThrustN += 13300000;
     }
+
+    physicsEngine.physicsObjects['OV'].setMass(totalMass);
+
+    physicsEngine.physicsObjects['OV'].setThrust(totalThrustN);
+
+    physicsEngine.update();
+
+
+
+    // Telemetrie
+    //OV.mission.telemetryPos.mach = aeroData.mach_speed;
+    OV.mission.telemetryPos.V = physicsEngine.physicsObjects['OV'].velVec.length() //* 3.6;
+    OV.mission.telemetryPos.alt_m = physicsEngine.physicsObjects['OV'].locVec.length() - EARTH_RADIUS;
+    //OV.mission.telemetryPos.alt_m = physicsEngine.physicsObjects['OV'].fThrust.length() /;
+    /*console.log({
+        thrust: fThrust.length().toFixed(0),
+        gravity: fGravity.length().toFixed(0),
+        mass: totalMass.toFixed(0),
+        accel: accelVec.length().toFixed(2),
+        v: velocityVector.length().toFixed(2)
+    });*/
 }, 100);
 
-let physicsModel = "ascent";
 
 
+let cl = 0;
+let cd = 0;
+//console.log("v: " + vel + ", h: " + height);
+//let pos = { lat: 0, lon: 0 };
+
+
+let flightAngle = -1.5;
 setInterval(() => {  // Not working right now, reworking physics and location system
     if (physicsModel == "ascent") {
-        let pos = destinationPoint(0, 0, dr, 119);
-        gv = CoordsToGroundVector(pos.lat, pos.lon);
-        groundVector = new Vector(gv.x, gv.y, gv.z);
-        lv = groundVectorToLocationVector(gv.x, gv.y, gv.z);
-        locationVector = new Vector(lv.x, lv.y, lv.z);
-        console.log(pos);
+        //pos = destinationPoint(0, 0, dr, 180);
+        //gv = CoordsToGroundVector(pos.lat, pos.lon);
+        //groundVector.set(gv[0], gv[1], gv[2]);
+        //lv = groundVectorToLocationVector(gv[0], gv[1], gv[2], height);
+        //locationVector.set(lv[0], lv[1], lv[2]);
+        //gfv = groundVectorToLocalFacingVector(gv[0], gv[1], gv[2]);
+        //facingVector.set(gfv[0], gfv[1], gfv[2])
+        //let tv = getThrustVector(OV.IMU.pitch, OV.IMU.yaw)
+        //thrustVector.set(tv.x, tv.y, tv.z);
+        if (OV.inIntactAbort) {
+            //console.log(distanceAndHeading(pos.lat, pos.lon, 46.05218373657082, 63.247993768099455))
+        }
+        //console.log(pos);
+        //console.log(facingVector);
+        //console.log(thrustVector);
     }
-}, 1000);
+    /*if (physicsModel == "final") {
+        if (OV.inIntactAbort) {
+            console.log(distanceAndHeading(pos.lat, pos.lon, 46.05218373657082, 63.247993768099455))
+        }
+        if (height > 67000) {
+
+            let density = 1.225 * Math.E ** (-height / 8000);
+
+            //console.log(density);
+            let drag = 0.5 * density * vel * vel * 249.9;
+            //console.log(drag);
+            let dv = (-(drag / 100000) - 9.81 * Math.sin((flightAngle / 180) * Math.PI)) / 10 * (-1);
+            //console.log(dv);
+            let dh = vel * Math.sin((flightAngle / 180) * Math.PI) / 10;
+            //console.log(dh);
+            let dx = vel * Math.cos((flightAngle / 180) * Math.PI) / 10;
+            //console.log(dx);
+            vel -= dv;
+            height += dh;
+            dr += dx;
+            //console.log(vel, height, dr, "density, drag, dv, dh, dx", density, drag, dv, dh, dx);
+
+            OV.mission.telemetryPos.alt_m = height;
+            OV.mission.telemetryPos.downrange_m = dr;
+            OV.mission.telemetryPos.V = vel * 3.6;
+
+
+        } else {
+            flightAngle = OV.IMU.pitch;
+
+            // Pos rechnung gleich
+            let aero = computeAthmospere(height, vel * 3.6, 10);
+
+            if (aero.mach_speed > 2) {
+                cl = 1.0;
+                cd = 1.1;
+            } else {
+                cl = 0.7;
+                cd = 0.3;
+            }
+            let lift = cl * (aero.density / 2) * 249.9 * vel * vel; // N
+            let drag = cd * (aero.density / 2) * 249.9 * (vel / 3.6) * (vel / 3.6); // N
+            if (OV.dragChute.deployed && !OV.dragChute.jettisoned) {
+                drag += 2074401;
+            }
+            if (OV.brakes.applied) {
+                drag += 5423271;
+            }
+            //console.log(lift/drag)
+            let dt = 1;
+            //console.log(drag)
+
+            let accel = drag / 125000; // N/kg = m/s^2
+            let delv = accel / 10; // delta-vel m/s
+
+            let delh = delv / 3.6 + 9.81;
+            let delr = 1;
+            if (aero.mach_speed > 5) {
+                delr = delv;
+            } else if (aero.mach_speed > 1) {
+                delr = (delv) * 2;
+            } else {
+                delr = (delv) * 4.5;
+            }
+
+            //console.log(vel);
+            //console.log(accel)
+            vel -= delv / 3.6;
+            pos = destinationPoint(pos.lat, pos.lon, delr, OV.IMU.yaw);
+            gv = CoordsToGroundVector(pos.lat, pos.lon);
+            groundVector.set(gv[0], gv[1], gv[2])
+            lv = groundVectorToLocationVector(gv[0], gv[1], gv[2]);
+            locationVector.set(lv[0], lv[1], lv[2])
+            //console.log(vel - dvel)
+            height = height - delh * 3.6;
+            if (height < 0) {
+                height = 0;
+            }
+            if (vel < 0) {
+                vel = 0; 4
+            }
+            //console.log("v: " + vel + ", h: " + height + ", dv: " + dvel + ", dh: " + delh + ", a: " + accel);
+            OV.mission.telemetryPos.V = vel * 3.6;
+            OV.mission.telemetryPos.alt_m = height;
+            OV.mission.telemetryPos.downrange_m = dr;
+            OV.mission.telemetryPos.mach = aero.mach_speed;
+            //console.log(Number(vel).toFixed(2), Number(height).toFixed(2), Number(dr).toFixed(2), Number(delv).toFixed(2), Number(delh).toFixed(2), Number(accel).toFixed(2), Number(drag).toFixed(2), Number(aero.mach_speed).toFixed(2));
+        }
+    }*/
+}, 100);
 
 
 
@@ -838,4 +1303,10 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server läuft auf http://0.0.0.0:${PORT}`);
 });
+//OV.computers.programHandler.exec('SSMEstartUp', OV.computers.gpc1);
+//OV.srbHandler.ignite()
 
+
+console.log("Launch!");
+OV.metUpdaterLoop();
+OV.GroundLaunchSequencer();
