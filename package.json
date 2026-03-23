@@ -1,9 +1,14 @@
 {
   "dependencies": {
     "cors": "^2.8.6",
+    "draco": "^0.0.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "fix": "^0.0.3",
     "fs": "^0.0.1-security",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "three": "^0.183.2",
+    "three.js": "^0.77.0",
+    "vector-math": "^1.1.1"
   }
 }
