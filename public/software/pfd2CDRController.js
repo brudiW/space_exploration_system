@@ -266,12 +266,12 @@ export class PFD2CDRController {
             this.screen.addRect("lime", 190, 146, 260, 164);
             this.screen.addRect("lime", 190, 186, 260, 204);
             // Texts B
-            if (!OV.avionics.LelevonA.getDisabled()) { this.screen.addText("ENABLED", 195, 50); } else { this.screen.addText("DISABLED", 195, 50); }
-            if (!OV.avionics.LelevonB.getDisabled()) { this.screen.addText("ENABLED", 195, 70); } else { this.screen.addText("DISABLED", 195, 70); }
-            if (!OV.avionics.RelevonB.getDisabled()) { this.screen.addText("ENABLED", 195, 90); } else { this.screen.addText("DISABLED", 195, 90); }
-            if (!OV.avionics.RelevonA.getDisabled()) { this.screen.addText("ENABLED", 195, 110); } else { this.screen.addText("DISABLED", 195, 110); }
-            if (!OV.avionics.bodyflap.getDisabled()) { this.screen.addText("ENABLED", 195, 150); } else { this.screen.addText("DISABLED", 195, 150); }
-            if (!OV.avionics.rudderBrake.getDisabled()) { this.screen.addText("ENABLED", 195, 190); } else { this.screen.addText("DISABLED", 195, 190); }
+            if (!OV.avionics.LelevonA.disabled) { this.screen.addText("ENABLED", 195, 50); } else { this.screen.addText("DISABLED", 195, 50); }
+            if (!OV.avionics.LelevonB.disabled) { this.screen.addText("ENABLED", 195, 70); } else { this.screen.addText("DISABLED", 195, 70); }
+            if (!OV.avionics.RelevonB.disabled) { this.screen.addText("ENABLED", 195, 90); } else { this.screen.addText("DISABLED", 195, 90); }
+            if (!OV.avionics.RelevonA.disabled) { this.screen.addText("ENABLED", 195, 110); } else { this.screen.addText("DISABLED", 195, 110); }
+            if (!OV.avionics.bodyflap.disabled) { this.screen.addText("ENABLED", 195, 150); } else { this.screen.addText("DISABLED", 195, 150); }
+            if (!OV.avionics.rudderBrake.disabled) { this.screen.addText("ENABLED", 195, 190); } else { this.screen.addText("DISABLED", 195, 190); }
             // Texts C
             this.screen.addText(OV.avionics.LelevonA.targetPos, 275, 50);
             this.screen.addText(OV.avionics.LelevonB.targetPos, 275, 70);
@@ -287,12 +287,12 @@ export class PFD2CDRController {
             this.screen.addText(OV.avionics.bodyflap.pos, 305, 150);
             this.screen.addText(OV.avionics.rudderBrake.pos, 305, 190);
             // Touchzones
-            this.addTouchZone("LelevonA", 190, 46, 70, 18, (touch, orbiter) => { OV.avionics.LelevonA.disabled = !OV.avionics.LelevonA.disabled });
-            this.addTouchZone("LelevonB", 190, 66, 70, 18, (touch, orbiter) => { OV.avionics.LelevonB.disabled = !OV.avionics.LelevonB.disabled });
-            this.addTouchZone("RelevonB", 190, 86, 70, 18, (touch, orbiter) => { OV.avionics.RelevonB.disabled = !OV.avionics.RelevonB.disabled });
-            this.addTouchZone("RelevonA", 190, 106, 70, 18, (touch, orbiter) => { OV.avionics.RelevonA.disabled = !OV.avionics.RelevonA.disabled });
-            this.addTouchZone("bodyflap", 190, 146, 70, 18, (touch, orbiter) => { OV.avionics.bodyflap.disabled = !OV.avionics.bodyflap.disabled });
-            this.addTouchZone("rudderBrake", 190, 186, 70, 18, (touch, orbiter) => { OV.avionics.rudderBrake.disabled = !OV.avionics.rudderBrake.disabled });
+            this.addTouchZone("LelevonA", 190, 46, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/LelevonA/endisable", { method: "POST" }) })() });
+            this.addTouchZone("LelevonB", 190, 66, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/LelevonB/endisable", { method: "POST" }) })() });
+            this.addTouchZone("RelevonB", 190, 86, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/RelevonB/endisable", { method: "POST" }) })() });
+            this.addTouchZone("RelevonA", 190, 106, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/RelevonA/endisable", { method: "POST" }) })() });
+            this.addTouchZone("bodyflap", 190, 146, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/bodyflap/endisable", { method: "POST" }) })() });
+            this.addTouchZone("rudderBrake", 190, 186, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/rudderBrake/endisable", { method: "POST" }) })() });
         }
     }
     abortSystemInterface() { // CLAS
