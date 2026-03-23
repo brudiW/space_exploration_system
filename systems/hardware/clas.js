@@ -15,7 +15,6 @@ export class CLASComputer {
                 }
             )
             this.triggerState = true;
-            posSim_rc.postMessage([0, 300, 0, 2900]); // Noch Überarbeiten weil aktuell Richtung hardcoded
             this.sequencer();
             return true;
         } else {
@@ -78,11 +77,15 @@ export class CLASComputer {
 
 export class CLAS_SRM {
     constructor() {
+        this.ignited = false;
         this.trimX = 0.0;
         this.trimZ = 0.0;
         this.tempSensor = 0.0; // Temperature of the Engine in °C
     }
     trigger() {
-        return true;
+        this.ignited = true;
+        setTimeout(() => {
+            this.ignited = false;
+        }, 2900);
     }
 }
