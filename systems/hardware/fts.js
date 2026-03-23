@@ -55,7 +55,7 @@ export class FlightTerminationSystem {
                     }
                     break;
                 case "et":
-                    if (OV.et.seperated) {
+                    if (OV.et.jettisoned) {
                         OV.et.TERMINATED = true;
                     } else {
                         OV.computers.programHandler.exec("SSMEshutdown", OV.computers.gpc1);
@@ -82,7 +82,7 @@ export class FlightTerminationSystem {
                             OV.SRBs.r.TERMINATED = true;
                         }, 1500);
                     }
-                    if (OV.et.seperated) {
+                    if (OV.et.jettisoned) {
                         OV.et.TERMINATED = true;
                     } else {
                         OV.computers.programHandler.exec("SSMEshutdown", OV.computers.gpc1);
