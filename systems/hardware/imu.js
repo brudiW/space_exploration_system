@@ -4,6 +4,7 @@ export class IMU {
     constructor() {
         this.pitch = 90;
         this.yaw = 213.3;
+        //this.yaw = 90;
         this.roll = -180;
         this.prate = 0;
         this.yrate = 0;
@@ -30,7 +31,7 @@ export class IMU {
             this.roll -= 360;
         }
         this.yaw = (this.yaw + 360) % 360;
-        imu_event.postMessage("");
+        imu_event.postMessage([this.prate, this.rrate, this.yrate]);
 
 
         setImmediate(this.update)
