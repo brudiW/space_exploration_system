@@ -15,23 +15,21 @@ export class Pod {
         this.nto = 664.0592;
         this.ntoTankMax = 664.0592;
         //console.log(this.id + ": " + this.omsPod + "; " + this.rcsPod);
-        setInterval(() => {this.drain}, 1000);
+        setInterval(() => { this.drain }, 1000);
     }
     drain() {
         if (this.omsPod.length > 0) {
             this.omsPod.forEach(e => {
-                if (e.running) {
-                    this.mmh -= 150 * (e.throttle / 100);
-                    this.nto -= 150 * (e.throttle / 100);
-                }
+                this.mmh -= 150 * (e.throttle / 100) / 10;
+                this.nto -= 150 * (e.throttle / 100) / 10;
             })
         }
         if (this.rcsPod.length > 0) {
             this.rcsPod.forEach(e => {
                 e.groups.forEach(f => {
                     if (f.running) {
-                        this.mmh -= 12;
-                        this.nto -= 12;
+                        this.mmh -= 12 / 10;
+                        this.nto -= 12 / 10;
                     }
                 })
             })
