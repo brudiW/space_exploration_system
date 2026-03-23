@@ -100,7 +100,7 @@ export class FlyByWireComputer {
                     OV.rcsController.pods[1].rcsPod[0].groups[3].open(); // Aft Left Down
                     OV.rcsController.pods[2].rcsPod[0].groups[3].open(); // Aft Right Down
 				}
-             	//RCS Front Up
+             	/*//RCS Front Up
 const RCSfU = new RCSGroup("RCS Front Up", [new RCSThruster(), new RCSThruster(), new RCSThruster]);
 const RCSfF = new RCSGroup("RCS Front Forward", [new RCSThruster(), new RCSThruster(), new RCSThruster()]);
 
@@ -138,7 +138,8 @@ const RCSaRd = new RCSGroup("RCS Aft Right Down", [new RCSThruster(), new RCSThr
 const RCSaRp = new RCSPod("PCS Aft Right", [RCSaRu, RCSaRr, RCSaRa, RCSaRd]);
 const PodAftRight = new Pod("Aft Right", [OMSr], [RCSaRp]);
 
-const RCS_OMS = new ReactionControlSystemController([PodFront, PodAftLeft, PodAftRight]);
+const RCS_OMS = new ReactionControlSystemController([PodFront, PodAftLeft, PodAftRight]);*/
+			}
 
             this.lastRates = {p: p, r: roll, y: yaw};
         }
