@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+            padding: auto;
+        }
+
+        .topbar {
+            width: auto;
+            background-color: dimgray;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 25% 50% 25%;
+
+        }
+
+        .display {
+            width: auto;
+            height: auto;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: dimgray;
+            display: grid;
+            grid-template-columns: auto auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <div>Mission Control</div>
+        <div id="met" style="text-align: center;"></div>
+        <div>Settings</div>
+    </div>
+    <div style="display: grid;grid-template-columns: auto auto;">
+        <div id="control-interfaces">
+            <div class="display" id="guidance">
+                <p id="guidance-imu"></p>
+            </div>
+            <div class="display" id="booster">
+                <p id="booster-ssme"></p>
+                <p id="booster-srb"></p>
+            </div>
+            <div class="display" id="rso">
+                <select name="terminatePart" id="terminatePart">
+                    <option value="srbL">Left SRB</option>
+                    <option value="srbR">Right SRB</option>
+                    <option value="srb">SRBs</option>
+                    <option value="et">ET</option>
+                    <option value="lv">Launch Vehicle</option>
+                    <option value="all">ALL</option>
+                </select>
+                <button onclick="terminate()">Terminate</button>
+            </div>
+        </div>
+        <div id="eventCodeHistory" class="display"></div>
+    </div>
+    <script>
+        function terminate() {
+            const part = document.getElementById("terminatePart").value;
+            (async () => {
+                await fetch("/api/mc/terminate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ part: part })
+                })
+            })
+        }
+    </script>
+    <script src="mission-control.js"></script>
+</body>
+
+</html>
