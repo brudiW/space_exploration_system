@@ -203,12 +203,12 @@ export class PFD2PLTController {
             this.screen.addText(OV.avionics.bodyflap.pos, 305, 150);
             this.screen.addText(OV.avionics.rudderBrake.pos, 305, 190);
             // Touchzones
-            this.addTouchZone("LelevonA", 190, 46, 70, 18, (touch, orbiter) => { OV.avionics.LelevonA.disabled = !OV.avionics.LelevonA.disabled });
-            this.addTouchZone("LelevonB", 190, 66, 70, 18, (touch, orbiter) => { OV.avionics.LelevonB.disabled = !OV.avionics.LelevonB.disabled });
-            this.addTouchZone("RelevonB", 190, 86, 70, 18, (touch, orbiter) => { OV.avionics.RelevonB.disabled = !OV.avionics.RelevonB.disabled });
-            this.addTouchZone("RelevonA", 190, 106, 70, 18, (touch, orbiter) => { OV.avionics.RelevonA.disabled = !OV.avionics.RelevonA.disabled });
-            this.addTouchZone("bodyflap", 190, 146, 70, 18, (touch, orbiter) => { OV.avionics.bodyflap.disabled = !OV.avionics.bodyflap.disabled });
-            this.addTouchZone("rudderBrake", 190, 186, 70, 18, (touch, orbiter) => { OV.avionics.rudderBrake.disabled = !OV.avionics.rudderBrake.disabled });
+            this.addTouchZone("LelevonA", 190, 46, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/LelevonA/endisable", { method: "POST" }) })() });
+            this.addTouchZone("LelevonB", 190, 66, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/LelevonB/endisable", { method: "POST" }) })() });
+            this.addTouchZone("RelevonB", 190, 86, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/RelevonB/endisable", { method: "POST" }) })() });
+            this.addTouchZone("RelevonA", 190, 106, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/RelevonA/endisable", { method: "POST" }) })() });
+            this.addTouchZone("bodyflap", 190, 146, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/bodyflap/endisable", { method: "POST" }) })() });
+            this.addTouchZone("rudderBrake", 190, 186, 70, 18, (touch, orbiter) => { (async () => { await fetch("/api/ov/avionics/rudderBrake/endisable", { method: "POST" }) })() });
         }
     }
     abortModesInterface() {
@@ -292,22 +292,107 @@ export class PFD2PLTController {
             this.screen.addText("NONE", 320, 70);
 
             // Touch Zones
-            this.addTouchZone("1eTAL", 160, 26, 50, 18, (touch, orbiter) => OV.intactAbortMode.singleEngine = "TAL")
-            this.addTouchZone("1eATO", 210, 26, 50, 18, (touch, orbiter) => OV.intactAbortMode.singleEngine = "ATO")
-            this.addTouchZone("1eAOA", 270, 26, 50, 18, (touch, orbiter) => OV.intactAbortMode.singleEngine = "AOA")
-            this.addTouchZone("1eNONE", 310, 26, 50, 18, (touch, orbiter) => OV.intactAbortMode.singleEngine = "NONE")
+            this.addTouchZone("1eTAL", 160, 26, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/SE", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "TAL" })
+                })
+            })())
+            this.addTouchZone("1eATO", 210, 26, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/SE", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "ATO" })
+                })
+            })())
+            this.addTouchZone("1eAOA", 270, 26, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/SE", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "AOA" })
+                })
+            })())
 
-            this.addTouchZone("2eRTLS", 110, 46, 50, 18, (touch, orbiter) => OV.intactAbortMode.twoEngine = "RTLS")
-            this.addTouchZone("2eTAL", 160, 46, 50, 18, (touch, orbiter) => OV.intactAbortMode.twoEngine = "TAL")
-            this.addTouchZone("2eATO", 210, 46, 50, 18, (touch, orbiter) => OV.intactAbortMode.twoEngine = "ATO")
-            this.addTouchZone("2eAOA", 270, 46, 50, 18, (touch, orbiter) => OV.intactAbortMode.twoEngine = "AOA")
-            this.addTouchZone("2eNONE", 310, 46, 50, 18, (touch, orbiter) => OV.intactAbortMode.twoEngine = "NONE")
+            this.addTouchZone("1eNONE", 310, 26, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/SE", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "NONE" })
+                })
+            })())
 
-            this.addTouchZone("3eRTLS", 110, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "RTLS")
-            this.addTouchZone("3eTAL", 160, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "TAL")
-            this.addTouchZone("3eATO", 210, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "ATO")
-            this.addTouchZone("3eAOA", 270, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "AOA")
-            this.addTouchZone("3eNONE", 310, 66, 50, 18, (touch, orbiter) => OV.intactAbortMode.threeEngine = "NONE")
+            this.addTouchZone("2eRTLS", 110, 46, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/2E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "RTLS" })
+                })
+            })())
+            this.addTouchZone("2eTAL", 160, 46, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/2E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "TAL" })
+                })
+            })())
+            this.addTouchZone("2eATO", 210, 46, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/2E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "ATO" })
+                })
+            })())
+            this.addTouchZone("2eAOA", 270, 46, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/2E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "AOA" })
+                })
+            })())
+            this.addTouchZone("2eNONE", 310, 46, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/2E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "NONE" })
+                })
+            })())
+
+            this.addTouchZone("3eRTLS", 110, 66, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/3E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "RTLS" })
+                })
+            })())
+            this.addTouchZone("3eTAL", 160, 66, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/3E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "TAL" })
+                })
+            })())
+            this.addTouchZone("3eATO", 210, 66, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/3E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "ATO" })
+                })
+            })())
+            this.addTouchZone("3eAOA", 270, 66, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/3E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "AOA" })
+                })
+            })())
+            this.addTouchZone("3eNONE", 310, 66, 50, 18, (touch, orbiter) => (async () => {
+                await fetch("/api/ov/abortMode/3E", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ mode: "NONE" })
+                })
+            })())
         }
     }
     apuInterface() {
