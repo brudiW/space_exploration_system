@@ -248,14 +248,15 @@ export class PFD1CDRController {
         }
 
         this.screen.addText(meth + ":" + metm + ":" + mets, 5, 580);
-        if (OV.mission.met < 515) {
+        //if (OV.mission.met < 515) {
             this.screen.addText("Range: " + Math.round(OV.mission.telemetryPos.downrange_m*1000)/1000, 5, 560);
             this.screen.addText("Alt: " + Math.round(OV.mission.telemetryPos.alt_m*1000)/1000, 5, 540);
             this.screen.addText("Velocity: " + Math.round(OV.mission.telemetryPos.V*1000)/1000, 5, 520);
             this.screen.addText("Mach: " + Math.round(OV.mission.telemetryPos.mach/3.6*1000)/1000, 5, 500);
+            this.screen.addText("G: " + Number(OV.mission.telemetryPos.g).toFixed(1), 750, 580)
             this.screen.addText("LH2: " + Math.round(OV.et.lh2), 10, 140);
             this.screen.addText("LOX: " + Math.round(OV.et.lox), 10, 160);
-        }
+        //}
 
         if (OV.computers.clasComputer.triggerState) {
             this.screen.addText("CLAS TRIGGERED", 105, 5);
