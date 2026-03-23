@@ -527,7 +527,7 @@ app.post("/entry", (req, res) => {
 app.post("/deorbit", (req, res) => {
     OV.rcsController.pods[1].omsPod[0].throttle = 100.0;
     OV.rcsController.pods[2].omsPod[0].throttle = 100.0;
-    setInterval(() => {
+    setTimeout(() => {
         OV.rcsController.pods[1].omsPod[0].throttle = 0.0;
         OV.rcsController.pods[2].omsPod[0].throttle = 0.0;
     }, 135000);
