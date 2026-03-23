@@ -349,6 +349,15 @@
             transform: scale(1.5);
         }
     </style>
+    <script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.jsdelivr.net/npm/three@0.131/build/three.module.js",
+                    "jsm/": "https://cdn.jsdelivr.net/npm/three@0.131/examples/jsm/",
+                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.131/examples/jsm/"
+                }
+			}
+		</script>
 
 
 </head>
@@ -364,8 +373,8 @@
 
 
             <div id="plt-windows-front" class="block">
-                <canvas id="plt-front-window1" class="window"
-                    style="width: 800px; height: 400px; margin: 100px; margin-right: 500px; margin-bottom: 200px;margin-left: auto;"></canvas>
+                <!--<canvas id="plt-front-window1" class="window"
+                    style="width: 800px; height: 400px; margin: 100px; margin-right: 500px; margin-bottom: 200px;margin-left: auto;"></canvas>-->
             </div>
             <div style="display: flex; flex-direction: row;">
                 <div id="plt-middle-left-screen-group" class="block" style="margin-left: auto;">
@@ -435,24 +444,35 @@
                         MAIN ENGINES
 
                         <div class="ssme-lights">
-                            <div class="statusLight l" onclick="OV.ssmeHandler.l.shutDown()">L</div>
-                            <div class="statusLight ctr" onclick="OV.ssmeHandler.ctr.shutDown()">CTR</div>
-                            <div class="statusLight r" onclick="OV.ssmeHandler.r.shutDown()">R</div>
+                            <div class="statusLight l" id="ssme-l"
+                                onclick="(async () => {await fetch('/api/ov/ssme/l/shutdown', {method: 'POST'})})()">L
+                            </div>
+                            <div class="statusLight ctr" id="ssme-ctr"
+                                onclick="(async () => {await fetch('/api/ov/ssme/ctr/shutdown', {method: 'POST'})})()">
+                                CTR</div>
+                            <div class="statusLight r" id="ssme-r"
+                                onclick="(async () => {await fetch('/api/ov/ssme/r/shutdown', {method: 'POST'})})()">R
+                            </div>
 
-                            <div class="statusLight arm">ARM</div>
-                            <div class="statusLight cut" onclick="OV.ssmeHandler.shutDown()">CUT</div>
+                            <div class="statusLight arm" id="ssme-shutdownInhibit"
+                                onclick="(async () => {await fetch('/api/ov/ssme/shutdownInhibit', {method: 'POST'})})()">
+                                INHIB</div>
+                            <div class="statusLight cut"
+                                onclick="(async () => {await fetch('/api/ov/ssme/shutdown', {method: 'POST'})})()">CUT
+                            </div>
                         </div>
                     </div>
                     <div id="srbMANAUTOandSEP" class="module">
                         SRB
                         <div class="linear-switch vertical" data-labels="MAN/AUTO,AUTO"></div>
                         <div id="srbJET" class="statusLight"
-                            onclick="if(OV.software.srbSepMode == 'man'){OV.srbHandler.seperate()}">SEP</div>
+                            onclick="(async () => {await fetch('/api/ov/srb/sep', {method: 'POST'})})()">SEP</div>
                     </div>
                     <div id="etMANAUTOandSEP" class="module">
                         ET
                         <div class="linear-switch vertical" data-labels="MAN,AUTO"></div>
-                        <div id="etJET" class="statusLight" onclick="if(OV.software.etSepMode){OV.et.seperate()}">SEP
+                        <div id="etJET" class="statusLight"
+                            onclick="(async () => {await fetch('/api/ov/et/sep', {method: 'POST'})})()">SEP
                         </div>
                     </div>
                 </div>
@@ -468,9 +488,11 @@
                     </div>
                     <div id="runway-chute" class="module">
                         <br>
-                        <div id="runway-chute-deploy" class="statusLight">CHUTE DEPL</div>
+                        <div id="runway-chute-deploy" class="statusLight"
+                            onclick="fetch('/api/ov/dragChute/deploy', {method: 'POST'})">CHUTE DEPL</div>
                         <br>
-                        <div id="runway-chute-jettison" class="statusLight">CHUTE JET</div>
+                        <div id="runway-chute-jettison" class="statusLight"
+                            onclick="fetch('/api/ov/dragChute/jettison', {method: 'POST'})">CHUTE JET</div>
                     </div>
                     <div id="clasAbortButtonModule" class="module">
                         <br>
@@ -483,19 +505,21 @@
                         <div
                             style="display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto auto;">
                             <div id="clasMainChuteDeploy" class="statusLight"
-                                onclick="OV.parachutes.mainA.deploy();OV.parachutes.mainB.deploy();OV.parachutes.mainC.deploy();">
+                                onclick="fetch('/api/ov/clas/chutes/mainA/deploy', {method: 'POST'}); fetch('/api/ov/clas/chutes/mainB/deploy', {method: 'POST'}); fetch('/api/ov/clas/chutes/mainC/deploy', {method: 'POST'})">
                                 MAIN DEP</div>
-                            <div id="clasBrakeChuteDeploy" class="statusLight" onclick="OV.parachutes.brake.deploy();">
+                            <div id="clasBrakeChuteDeploy" class="statusLight"
+                                onclick="fetch('/api/ov/clas/chutes/brake/deploy', {method: 'POST'})">
                                 BRAKE DEP</div>
                             <div id="clasMainChuteCut" class="statusLight"
-                                onclick="OV.parachutes.mainA.cut();OV.parachutes.mainB.cut();OV.parachutes.mainC.cut();">
+                                onclick="fetch('/api/ov/clas/chutes/mainA/cut', {method: 'POST'}); fetch('/api/ov/clas/chutes/mainB/cut', {method: 'POST'}); fetch('/api/ov/clas/chutes/mainC/cut', {method: 'POST'})">
                                 MAIN CUT</div>
-                            <div id="clasBrakeChuteJettison" class="statusLight" onclick="OV.parachutes.brake.cut();">
+                            <div id="clasBrakeChuteJettison" class="statusLight"
+                                onclick="fetch('/api/ov/clas/chutes/brake/cut', {method: 'POST'})">
                                 BRAKE JET</div>
                             <div id="clasBackUpChuteDeploy" class="statusLight"
-                                onclick="OV.parachutes.backUpA.deploy();">BACKUP DEP</div>
+                                onclick="fetch('/api/ov/clas/chutes/backUp/deploy', {method: 'POST'})">BACKUP DEP</div>
                             <div id="clasBackUpChuteJettison" class="statusLight"
-                                onclick="OV.parachutes.backUpA.cut();">BACKUP JET</div>
+                                onclick="fetch('/api/ov/clas/chutes/backUp/cut', {method: 'POST'})">BACKUP JET</div>
                         </div>
                     </div>
 
@@ -512,6 +536,90 @@
                     <button class="cds-button" id="cds4">^</button>
                     <button class="cds-button" id="cds5">^</button>
                     <button class="cds-button" id="cds6">^</button>
+                </div>
+            </div>
+            <div id="otc-interface" class="block">
+                <div class="module">
+                    OTC
+                </div>
+                <div class="module"
+                    style="display: grid; grid-template-columns: 40px 40px 40px 40px; grid-template-rows: 40px 40px 40px 40px 40px 40px 40px 40px;">
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [0, 0]})})">FAULT
+                        SUMM</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [0, 1]})})">SYS
+                        SUMM</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [0, 2]})})">MSG
+                        RESET</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [0, 3]})})">ACK</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [1, 0]})})">GPC/
+                        CRT</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [1, 1]})})">A</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [1, 2]})})">B</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [1, 3]})})">C</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [2, 0]})})">I/O
+                        RESET</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [2, 1]})})">D</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [2, 2]})})">E</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [2, 3]})})">F</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [3, 0]})})">ITEM</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [3, 1]})})">1</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [3, 2]})})">2</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [3, 3]})})">3</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [4, 0]})})">EXEC</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [4, 1]})})">4</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [4, 2]})})">5</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [4, 3]})})">6</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [5, 0]})})">OPS</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [5, 1]})})">7</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [5, 2]})})">8</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [5, 3]})})">9</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [6, 0]})})">SPEC</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [6, 1]})})">-</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [6, 2]})})">0</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [6, 3]})})">+</button>
+
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [7, 0]})})">RESUME</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [7, 1]})})">CLEAR</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [7, 2]})})">.</button>
+                    <button
+                        onclick="fetch('/api/ov/dskb/press', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({button: [7, 3]})})">PRO</button>
                 </div>
             </div>
             <div id="dpc-interface-block" class="block">
@@ -560,8 +668,8 @@
 
 
             <div id="cdr-windows-front" class="block">
-                <canvas id="cdr-front-window1" class="window"
-                    style="width: 800px; height: 400px; margin: 100px; margin-left: 500px; margin-bottom: 200px;"></canvas>
+                <!--<canvas id="cdr-front-window1" class="window"
+                    style="width: 800px; height: 400px; margin: 100px; margin-left: 500px; margin-bottom: 200px;"></canvas>-->
             </div>
             <div style="display: flex; flex-direction: row;">
                 <div id="cdr-middle-left-screen-group" class="block">
@@ -583,7 +691,9 @@
                     <div class="module">
                         ABORT MODES
                         <div style="display: flex;flex-direction: row;">
-                            <div id="abortButton" class="statusLight" onclick="OV.inIntactAbort = true;">ABORT</div>
+                            <div id="abortButton" class="statusLight"
+                                onclick="(async () => {await fetch('/api/ov/intactAbort', {method: 'POST'})})()">ABORT
+                            </div>
                             <div class="knob-container">
                                 <div class="knob" data-labels="RTLS,OFF,TAL,ATO"></div>
                             </div>
@@ -618,9 +728,23 @@
     AFT FLIGHT DECK
 
     <br>
+    <div id="aft-windows" style="display: grid; grid-template-columns: auto auto auto; grid-template-rows: auto auto;">
+        <div id="window-top-stb"></div>
+        <div></div>
+        <div id="window-top-prt"></div>
+        <div id="window-aft-stb"></div>
+        <div id="cam"></div>
+        <div id="window-aft-prt"></div>
+    </div>
 
     <div id="aft-base" class="aft-base">
-        <div id="aft-right-side" class="block"></div>
+        <div id="aft-right-side" class="block">
+            <canvas id="pos-display" height="200" width="500"></canvas>
+        </div>
+        <div id="angles">
+            <p id="selected"></p>
+            <p id="rotation"></p>
+        </div>
 
 
 
@@ -630,6 +754,7 @@
         <div id="aft-joystick-container" class="joystick-wrapper" style="justify-content: center; margin-top: 20px;">
             <div id="aft-joystick" class="joystick-container"></div>
         </div>
+        <div class="statusLight" id="aft_control" onclick="if (!aft) {aft = true }else { aft = false}">AFT</div>
     </div>
 
 
@@ -671,6 +796,7 @@
     <p id="debugOutput"></p>
 
 
+
     <script src="cockpit.js"></script>
     <script type="module" src="cds.js"></script>
     <script type="module" src="cdr-pfd1.js"></script>
@@ -678,6 +804,7 @@
     <script type="module" src="cdr-pfd2.js"></script>
     <script type="module" src="plt-pfd2.js"></script>
     <script type="module" src="cdr-sfd1.js"></script>
+    <script type="module" src="index.js"></script>
 
 
 
@@ -808,7 +935,7 @@
                         label: labels[pos]
                     }
                 }));
-                console.log(switchEl);
+                //console.log(switchEl);
             };
 
             update();
@@ -848,8 +975,8 @@
 
 
         clasSwitch.addEventListener("change", e => {
-            console.log("CLAS switch changed:", e.detail.label);
-            console.log(e)
+            //console.log("CLAS switch changed:", e.detail.label);
+            //console.log(e)
 
             // Example: trigger a function
             if (e.detail.label === "ARM") {
@@ -912,13 +1039,13 @@
                     const resp = await fetch("/api/ov/lOMS/arm", {
                         method: "POST"
                     });
-                })
+                })()
             } else if (e.detail.label === "OFF") {
                 (async () => {
                     const resp = await fetch("/api/ov/lOMS/disarm", {
                         method: "POST"
                     });
-                })
+                })()
             }
         });
 
@@ -931,13 +1058,13 @@
                     const resp = await fetch("/api/ov/rOMS/arm", {
                         method: "POST"
                     });
-                })
+                })()
             } else if (e.detail.label === "OFF") {
                 (async () => {
                     const resp = await fetch("/api/ov/rOMS/disarm", {
                         method: "POST"
                     });
-                })
+                })()
             }
         });
 
@@ -955,9 +1082,21 @@
 
             // Example: trigger a function
             if (e.detail.label === "MAN/AUTO") {
-                srbSepMode = "man";
+                (async () => {
+                    await fetch('/api/ov/srb/sepMode', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: "man/auto" })
+                    })
+                })()
             } else if (e.detail.label === "AUTO") {
-                srbSepMode = "auto";
+                (async () => {
+                    await fetch('/api/ov/srb/sepMode', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: "auto" })
+                    })
+                })()
             }
         });
 
@@ -966,9 +1105,21 @@
 
             // Example: trigger a function
             if (e.detail.label === "MAN") {
-                etSepMode = "man";
+                (async () => {
+                    await fetch('/api/ov/et/sepMode', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: true })
+                    })
+                })()
             } else if (e.detail.label === "AUTO") {
-                etSepMode = "auto";
+                (async () => {
+                    await fetch('/api/ov/et/sepMode', {
+                        method: 'POST',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ mode: false })
+                    })
+                })()
             }
         });
 
@@ -990,7 +1141,7 @@
 
         // CDR Window front
 
-        const cdr_window = document.getElementById("cdr-front-window1");
+        /*const cdr_window = document.getElementById("cdr-front-window1");
         const cdr_window_ctx = cdr_window.getContext("2d");
 
         cdr_window_ctx.beginPath();
@@ -1023,7 +1174,7 @@
         cdr_window_ctx.lineTo(275, 150);
         cdr_window_ctx.lineTo(300, 150);
         cdr_window_ctx.fillStyle = "gray";
-        cdr_window_ctx.fill();
+        cdr_window_ctx.fill();*/
 
 
 
@@ -1074,6 +1225,7 @@
 
         function buttonStateUpdate() {
             if (OV != null) {
+                // CLAS
                 if (OV.computers.clasComputer.armState && !OV.computers.clasComputer.failState && !OV.computers.clasComputer.triggerState) {
                     document.getElementById("clasSTATElight").style.color = "orange";
                     document.getElementById("clasSTATElight").innerHTML = "[ARM]";
@@ -1087,11 +1239,13 @@
                     document.getElementById("clasSTATElight").style.color = "black";
                     document.getElementById("clasSTATElight").innerHTML = "";
                 }
-                /*if (
+                if (
                     OV.parachutes.brake.deployed
                 ) {
                     document.getElementById("clasBrakeChuteDeploy").style.backgroundColor = "green";
-                }*/
+                }
+
+
                 if (
                     OV.parachutes.mainA.deployed &&
                     OV.parachutes.mainB.deployed &&
@@ -1115,7 +1269,17 @@
                     document.getElementById("clasBackUpChuteDeploy").style.backgroundColor = "green";
                 }
 
+                // Drag Chute
+                if (OV.dragChute.deployed && !OV.dragChute.jettisoned) {
+                    document.getElementById("runway-chute-deploy").style.backgroundColor = "green";
+                }
+                if (OV.dragChute.jettisoned) {
+                    document.getElementById("runway-chute-deploy").style.backgroundColor = "orange";
+                    document.getElementById("runway-chute-jettison").style.backgroundColor = "oran<ge";
+                }
 
+
+                // OMS
 
                 if (OV.oms.l.arm) {
                     document.getElementById("omsLarmlight").style.color = "yellow";
@@ -1130,6 +1294,51 @@
                     document.getElementById("omsRarmlight").innerHTML = "";
                 }
 
+                // SSME
+
+                if (OV.ssme.l.thrust > 0) {
+                    document.getElementById("ssme-l").style.backgroundColor = "green";
+                } else if (OV.ssme.l.shtdwn) {
+                    document.getElementById("ssme-l").style.backgroundColor = "red";
+                }
+                if (OV.ssme.ctr.thrust > 0) {
+                    document.getElementById("ssme-ctr").style.backgroundColor = "green";
+                } else if (OV.ssme.ctr.shtdwn) {
+                    document.getElementById("ssme-ctr").style.backgroundColor = "red";
+                }
+                if (OV.ssme.r.thrust > 0) {
+                    document.getElementById("ssme-r").style.backgroundColor = "green";
+                } else if (OV.ssme.r.shtdwn) {
+                    document.getElementById("ssme-r").style.backgroundColor = "red";
+                }
+
+
+
+                if (OV.software.ssmeShutdownInhibit) {
+                    document.getElementById("ssme-shutdownInhibit").style.backgroundColor = "orange";
+                } else {
+                    document.getElementById("ssme-shutdownInhibit").style.backgroundColor = "#222";
+                }
+
+                // SRB
+                if (OV.SRBs.l.ignited && OV.SRBs.r.ignited) {
+                    document.getElementById("srbJET").style.backgroundColor = "orange";
+                }
+                if (OV.SRBs.l.seperated && OV.SRBs.r.seperated) {
+                    document.getElementById("srbJET").style.backgroundColor = "green";
+                }
+
+                // ET
+
+                if (OV.et.jettisoned) {
+                    document.getElementById("etJET").style.backgroundColor = "green";
+                }
+
+
+
+
+                // Takeover
+
                 if (OV.software.pilotTakeover) {
                     document.getElementById('cdrpilotTakeOver').style.backgroundColor = 'green';
                     document.getElementById('pltpilotTakeOver').style.backgroundColor = 'green';
@@ -1142,7 +1351,7 @@
         function switchStateUpdate() {
             Object.values(clasSwitch.dataset)
             clasSwitch.dataset.pos = globalThis.OV.switches.clasSTATE;
-            console.log(clasSwitch.dataset)
+            //console.log(clasSwitch.dataset)
         }
 
         setTimeout(() => { setInterval(buttonStateUpdate, 100) }, 1000);
