@@ -1,6 +1,8 @@
+const EARTH_RADIUS = 6378137;
+
 export class CLASComputer {
     constructor() {
-        this.SRMs = [];
+        this.SRMs = [new CLAS_SRM(), new CLAS_SRM(), new CLAS_SRM(), new CLAS_SRM(), new CLAS_SRM()];
         this.armState = true;
         this.triggerState = false;
         this.failState = false;
@@ -9,12 +11,12 @@ export class CLASComputer {
     trigger() {
         if (this.armState) {
             this.SRMs.forEach(
-                element => {
-                    const e = element[0];
-                    e.trigger();
+                motor => {
+                    motor.trigger();
                 }
             )
             this.triggerState = true;
+            //posSim_rc.postMessage([0, 300, 0, 2900]); // Noch Überarbeiten weil aktuell Richtung hardcoded
             this.sequencer();
             return true;
         } else {
@@ -24,6 +26,7 @@ export class CLASComputer {
     }
     sequencer() {
         OV.inAbort = true;
+        OV.inIntactAbort = true;
         OV.software.missionMode = "clas-abort";
         console.log("clas-sequencer");
 
@@ -40,22 +43,21 @@ export class CLASComputer {
         setTimeout(() => {
 
             const checkInterval = setInterval(() => {
-                const altitude = OV.positionData.altitude;
-                const yRate = OV.positionData.y_rate;
+                //const yRate = OV.positionData.y_rate;
 
-                if (!OV.parachutes.brake.deployed && altitude <= 5000 && yRate < 0) {
+                if (!OV.parachutes.brake.deployed && (physicsEngine.physicsObjects['OV'].locVec.length() - EARTH_RADIUS) <= 5000 && physicsEngine.physicsObjects['OV'].verticalSpeed < 0) {
                     // Deploy brake chute
                     OV.parachutes.brake.deploy();
-                    posSim_cmd.postMessage({ type: "brakeChute" });
+                    //posSim_cmd.postMessage({ type: "brakeChute" });
                     console.log("Brake chute deployed!");
                 }
 
-                if (!OV.parachutes.mainA.deployed && altitude <= 2500 && yRate < 0) {
+                if (!OV.parachutes.mainA.deployed && (physicsEngine.physicsObjects['OV'].locVec.length() - EARTH_RADIUS) <= 2500 && physicsEngine.physicsObjects['OV'].verticalSpeed < 0) {
                     // Deploy main chutes
                     OV.parachutes.mainA.deploy();
                     OV.parachutes.mainB.deploy();
                     OV.parachutes.mainC.deploy();
-                    posSim_cmd.postMessage({ type: "mainChutes" });
+                    //posSim_cmd.postMessage({ type: "mainChutes" });
                     console.log("Main chutes deployed!");
                 }
 
