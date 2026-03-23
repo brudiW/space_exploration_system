@@ -4,21 +4,21 @@ export function CoordsToGroundVector(lat, lon) {
   lon = lon / 180 * Math.PI;
   
   let x = rEarth * Math.cos(lat) * Math.cos(lon);
-  let y = rEarth * Math.cos(lat) * Math.sin(lon);
-  let z = rEarth * Math.sin(lat);
+  let z = rEarth * Math.cos(lat) * Math.sin(lon);
+  let y = rEarth * Math.sin(lat);
   
-  return [x, y, z];
+  return [x, z, y];
 }
 export function groundVectorToCoords(x, y, z) {
   const lat = Math.asin(z / rEarth);
   const lon = Math.atan2(y, x);
   return [ lat, lon ];
 }
-export function groundVectorToLocationVector(x, y, z, h) {
+export function groundVectorToLocationVector(x, z, y, h) {
   x = (x / rEarth) * (rEarth + h);
-  y = (y / rEarth) * (rEarth + h);
   z = (z / rEarth) * (rEarth + h);
-  return [x, y, z];
+  y = (y / rEarth) * (rEarth + h);
+  return [x, z, y];
 }
 export function groundVectorToLocalFacingVector(x, y, z) {
 
@@ -111,4 +111,34 @@ export function destinationPoint(lat, lon, distance, bearing) {
     lon: λ2 * 180 / Math.PI
   };
 }
+export function distanceAndHeading(lat1, lon1, lat2, lon2) {
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
 
+  // Haversine Distanz
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = rEarth * c;
+
+  // Initial Bearing
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+  let bearing = Math.atan2(y, x) * 180 / Math.PI;
+
+  // auf 0–360° normalisieren
+  bearing = (bearing + 360) % 360;
+
+  return {
+    distance, // Meter
+    heading: bearing // Grad
+  };
+}
