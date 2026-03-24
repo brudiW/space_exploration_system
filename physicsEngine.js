@@ -1,5 +1,7 @@
 import THREE from 'three.js';
-import { computeAthmospere } from './calcTools.js';
+import { computeAthmospere, getAirDensity } from './calcTools.js';
+import { airDensityAtAltitude, airDensityDryAir } from 'weather-formulas/airDensity';
+import { densityFog } from 'three/tsl';
 
 const EARTH_RADIUS = 6378137;
 
@@ -67,7 +69,9 @@ export class SpaceObject {
         let fGravity = this.locVec.clone().normalize().multiplyScalar(-localG * this.totalMass);
         const h = this.locVec.length() - EARTH_RADIUS;
 
-        let aeroData = computeAthmospere(h, this.velVec.length(), 10);
+        //let aeroData = computeAthmospere(h, this.velVec.length(), 10);
+        let density = getAirDensity(h)
+        //console.log(dt)
         let fDrag = new THREE.Vector3(1, 0, 0);
         let fLift = new THREE.Vector3(0, 1, 0);
         let fLiftDrag = new THREE.Vector3();
@@ -77,16 +81,17 @@ export class SpaceObject {
         const translateForce = new THREE.Vector3().add(thrustFront).add(thrustRight).add(thrustUp);
 
         if (h < 100000) { // Unter 100km
-            let dragMag = 0.5 * aeroData.density * Math.pow(this.velVec.length(), 2) * this.referenceArea;
-            fDrag = this.velVec.clone().normalize().multiplyScalar(dragMag).negate();
-            let lifMag = 0.5 * aeroData.density * Math.pow(this.velVec.length(), 2) * this.referenceArea;
+            console.log(density);
+            let dragMag = 0.5 * density * Math.pow(this.velVec.length(), 2) * this.referenceArea;
+            fDrag = this.velVec.clone().normalize().multiplyScalar(dragMag)//.negate();
+            let lifMag = 0.5 * density * Math.pow(this.velVec.length(), 2) * this.referenceArea;
             fLift = thrustUp.clone().normalize().multiplyScalar(lifMag);
             if (this.name == "OV") {
                 if (OV.dragChute.deployed && !OV.dragChute.jettisoned) {
-                    fDrag.add(this.velVec.clone().normalize().multiplyScalar(-2074401))
+                    fDrag.add(this.velVec.clone().normalize().multiplyScalar(2074401))
                 }
                 if (OV.brakes.applied) {
-                    fDrag.add(this.velVec.clone().normalize().multiplyScalar(-5423271))
+                    fDrag.add(this.velVec.clone().normalize().multiplyScalar(5423271))
                 }
                 if (OV.parachutes.brake.deployed) {
                     fDrag.add(this.velVec.clone().normalize().multiplyScalar(25))
@@ -120,7 +125,7 @@ export class SpaceObject {
         let fTotal;
         let altitude = this.locVec.length() - EARTH_RADIUS;
         if (this.verticalSpeed < 10 && altitude < 100000) {
-            fTotal = new THREE.Vector3().add(this.fThrust).add(fGravity).add(fDrag).sub(fLift)//.add(translateForce);
+            fTotal = new THREE.Vector3().add(this.fThrust).add(fGravity).sub(fDrag).sub(fLift)//.add(translateForce);
         } else {
             fTotal = new THREE.Vector3().add(this.fThrust).add(fGravity)//.sub(fDrag)//.add(translateForce);
         }
@@ -152,8 +157,8 @@ export class SpaceObject {
 
 
         if (this.name == "OV") {
-            OV.mission.telemetryPos.g = aeroData.dynamic_pressure;
-            OV.mission.telemetryPos.mach = aeroData.mach_speed;
+            //OV.mission.telemetryPos.g = aeroData.dynamic_pressure;
+            //OV.mission.telemetryPos.mach = aeroData.mach_speed;
             if (OV.software.onPad) {
                 if (this.locVec.length() < EARTH_RADIUS + 30) {
                     this.locVec.setLength(EARTH_RADIUS + 30)
