@@ -90,6 +90,14 @@ export function computeAthmospere(h = 0, v = 0, rl = 10) {
     turbular_flow: cfturb
   };
 }
+export function getAirPressure(h) {
+  let pressure = 101.325 * Math.exp(-h / 11000);
+  return pressure;
+}
+export function getAirDensity(h) {
+  let density =  getAirPressure(h) / ( 287 * 288.15 );
+  return density;
+}
 export function destinationPoint(lat, lon, distance, bearing) {
   const φ1 = lat * Math.PI / 180;
   const λ1 = lon * Math.PI / 180;
