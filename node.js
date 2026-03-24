@@ -527,7 +527,7 @@ app.post("/entry", (req, res) => {
 app.post("/deorbit", (req, res) => {
     OV.rcsController.pods[1].omsPod[0].throttle = 100.0;
     OV.rcsController.pods[2].omsPod[0].throttle = 100.0;
-    setTimeout(() => {
+    setInterval(() => {
         OV.rcsController.pods[1].omsPod[0].throttle = 0.0;
         OV.rcsController.pods[2].omsPod[0].throttle = 0.0;
     }, 135000);
@@ -1028,7 +1028,7 @@ setInterval(() => {
     }
 }, 1000);
 
-const OrbiterSpaceObject = new SpaceObject(0, "OV", { x: 6378137, y: 0, z:  0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, 0, 125000, true, [new DockingPort("ODS")], 249.9);
+const OrbiterSpaceObject = new SpaceObject(0, "OV", { x: 6498137, y: 0, z:  0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: -7000 * 3.6 }, { x: 0, y: 1, z: 0 }, 0, 125000, true, [new DockingPort("ODS")], 249.9);
 const ISS = new SpaceObject(1, "ISS", { x: 6778137, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 0, z: -7672.3 * 3.6 }, { x: 0, y: 1, z: 0 }, 0, 125000, true, [new DockingPort("IDA2")], 100000);
 physicsEngine.add(OrbiterSpaceObject);
 physicsEngine.add(ISS);
@@ -1308,5 +1308,11 @@ app.listen(PORT, () => {
 
 
 console.log("Launch!");
-OV.metUpdaterLoop();
-OV.GroundLaunchSequencer();
+//OV.metUpdaterLoop();
+//OV.GroundLaunchSequencer();
+
+setTimeout(() => {
+OV.et.seperate()
+OV.SRBs.l.seperate()
+OV.SRBs.r.seperate()
+}, 5000);
