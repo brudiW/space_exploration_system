@@ -218,7 +218,7 @@ loader.load('Space Shuttle (D) door-prt.glb', function (gltf) {
     model.name = "Door Port"
     model.rotation.set(-90 / 180 * Math.PI, 0, 0)
     //console.log(model)
-    OVGroup.add(model)
+    //OVGroup.add(model)
 }, undefined, function (error) {
 
     console.error(error);
@@ -236,7 +236,7 @@ loader.load('Space Shuttle (D) door-stb.glb', function (gltf) {
     model.rotation.set(-Math.PI / 2, 0, 0)
     model.name = "Door Starboard"
     //console.log(model)
-    OVGroup.add(model)
+    //OVGroup.add(model)
 }, undefined, function (error) {
 
     console.error(error);
@@ -262,6 +262,21 @@ loader.load('ISS_stationary.glb', function (gltf) {
     console.error(error);
 
 });
+const etObj = new THREE.Group();
+scene.add(etObj)
+
+loader.load('External Tank.glb', function (gtlf) {
+    const model = gtlf.scene;
+
+    model.position.set(-7.66765, 0, -10.088875); //
+    model.rotation.set(Math.PI, -Math.PI / 2, 0);
+    model.scale.set(0.025, 0.025, 0.025)
+    model.name = "ET";
+    const helpi = new THREE.AxesHelper(100);
+    model.add(helpi)
+    etObj.add(model);
+    etObj.visible = false;
+})
 
 
 
@@ -825,7 +840,7 @@ let srblSep = false;
 let srbrSep = false;
 let srbL;
 let srbR;
-function srbHandle() {
+function srbHandle(data) {
     if (!OV.srblSep) {
         if (OV.SRBs.l.ignited) {
             OVGroup.children[OVGroup.children.length - 1].children[0].children[16].visible = true;
@@ -854,6 +869,16 @@ function srbHandle() {
         }
     }
 }
+function etHandle(data) {
+    if (data['ET']) {
+        etObj.visible = true;
+        etObj.position.set(data['ET'].locVec.x, data['ET'].locVec.y, data['ET'].locVec.z)
+        //etObj.rotation.setFromVector3(new THREE.Vector3(data['ET'].faceVec.x, data['ET'].faceVec.y, data['ET'].faceVec.z))
+    } else {
+        etObj.position.set(data['OV'].locVec.x, data['OV'].locVec.y, data['OV'].locVec.z)
+        //etObj.rotation.setFromVector3(new THREE.Vector3(data['OV'].faceVec.x, data['OV'].faceVec.y, data['OV'].faceVec.z))
+    }
+}
 
 
 //scene.add(locVec)
@@ -878,6 +903,19 @@ async function fetchTelemetry() {
         scene.children[scene.children.length - 1].position.set(data['ISS'].locVec.x, data['ISS'].locVec.y, data['ISS'].locVec.z);
 
     }
+    etHandle(data);
+    if (data['ET']) {
+        etObj.visible = true;
+        etObj.children[0].visible = true;
+        etHandle(data);
+        //console.log("ff")
+        for (let i = 0; i < OVGroup.children[OVGroup.children.length-1].children[0].children.length; i++) {
+            if (OVGroup.children[OVGroup.children.length-1].children[0].children[i].name == "External_tank_(1)glb") {
+                OVGroup.children[OVGroup.children.length-1].children[0].children[i].visible = false;
+                //console.log("found")
+            }
+        }
+    }
     try {
 
     } catch (e) {
@@ -888,6 +926,13 @@ async function fetchTelemetry() {
 }
 const baseFacingVec = new THREE.Vector3(-1, -1, -1); // Richtung in OV-Localframe
 let facingVec = new THREE.Vector3(1, 1, 1)
+const ReentryMaterial = new THREE.MeshStandardMaterial({color: 14382874, emissive: 15489846, opacity: 0.7, transparent: true, side: THREE.DoubleSide});
+const ReentryConeFrontGeo = new THREE.SphereGeometry(1, 32, 16, Math.PI/2, Math.PI, 0, Math.PI);
+const ReentryConeFront = new THREE.Mesh(ReentryConeFrontGeo, ReentryMaterial);
+OVGroup.add(ReentryConeFront)
+ReentryConeFront.position.set(11.466, -0.259, 0);
+ReentryConeFront.rotation.set(0, 0, -8.15/180*Math.PI);
+ReentryConeFront.scale.set(8.293, 3.083, 2.794)
 
 //normalize the direction vector (convert to vector of length 1)
 const length = 100;
@@ -917,7 +962,7 @@ function updateRMS() {
 
 async function animate() {
     //console.log(OVGroup.children)
-    openPayload()
+    //openPayload()
     updateRMS();
     camera.lookAt(OVGroup.position)
     camera.zoom = camera.position.distanceTo(OVGroup.position)*10000
@@ -970,7 +1015,7 @@ async function animate() {
     // Rendering aller Fenster
 
     rendererFwdCdr.render(scene, fwdCdrSideFrontWindowCamera);
-    rendererFwdPlt.render(scene, camera);
+    rendererFwdPlt.render(scene, fwdPltSideFrontWindowCamera);
     rendererRearPrt.render(scene, rearPortWindowCamera);
     rendererRearTopPrt.render(scene, OVGroup.children[OVGroup.children.length - 1].children[0].children[10])
     rendererRMS.render(scene, activeCamera);
