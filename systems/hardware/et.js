@@ -1,3 +1,5 @@
+import { SpaceObject } from "../../physicsEngine.js";
+
 export class ET {
     constructor() {
         this.lox = 630540;
@@ -28,6 +30,8 @@ export class ET {
     }
     seperate() {
         this.jettisoned = true;
+        const etObj = new SpaceObject(4, "ET", {x: physicsEngine.physicsObjects['OV'].locVec.x, y: physicsEngine.physicsObjects['OV'].locVec.y, z: physicsEngine.physicsObjects['OV'].locVec.z}, {x: physicsEngine.physicsObjects['OV'].faceVec.x, y: physicsEngine.physicsObjects['OV'].faceVec.y, z: physicsEngine.physicsObjects['OV'].faceVec.z}, {x: physicsEngine.physicsObjects['OV'].velVec.x, y: physicsEngine.physicsObjects['OV'].velVec.y, z: physicsEngine.physicsObjects['OV'].velVec.z}, {x: 0, y: 1, z: 0}, 0, this.emptyMass + this.lh2 + this.lox, false, [], 300);
+        global.physicsEngine.add(etObj)
         const aaa = setInterval(() => { this.drain(0.35); }, 1000);
         setTimeout(() => {
             clearInterval(aaa);
