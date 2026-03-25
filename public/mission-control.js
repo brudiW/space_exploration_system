@@ -1,6 +1,6 @@
 let OV = {};
 let eventCodeHistory = [];
-let selectedRoles = ["booster", "guidance", "rso"];
+let selectedRoles = ["booster", "guidance", "et", "oms-rcs", "rso"];
 const eventDownlink = new BroadcastChannel('downlink_event');
 function handleDisplay() {
     if (OV.mission.met < 0) {
@@ -46,6 +46,17 @@ function handleDisplay() {
         document.getElementById("booster-srb").innerText = `SRB\n
         Left: Ignition State: ${OV.SRBs.l.ignited}, Seperation State: ${OV.SRBs.l.seperated}, Gimbal: ${Number(OV.SRBs.l.pos[0]).toFixed(2)}°, ${Number(OV.SRBs.l.pos[1]).toFixed(2)}°\n
         Right: Ignition State: ${OV.SRBs.r.ignited}, Seperation State: ${OV.SRBs.r.seperated}, Gimbal: ${Number(OV.SRBs.r.pos[0]).toFixed(2)}°, ${Number(OV.SRBs.r.pos[1]).toFixed(2)}°`
+    }
+    if (selectedRoles.includes("et")) {
+        document.getElementById("et").style.display = "inline-block";
+        document.getElementById("et-ssme").innerText = `ET\n
+        LH2: ${Number(OV.et.lh2).toFixed(2)} kg, LOX: ${Number(OV.et.lox).toFixed(2)} kg`
+    }
+    if (selectedRoles.includes("oms-rcs")) {
+        document.getElementById("oms-rcs").style.display = "inline-block";
+        document.getElementById("oms-rcs").innerText = `OMS RCS\n
+        Left: Thrust: ${OV.rcsController.pods[1].omsPod[0].throttle}%, ARM: ${OV.rcsController.pods[1].omsPod[0].arm}\n
+        Right: Thrust: ${OV.rcsController.pods[2].omsPod[0].throttle}%, ARM: ${OV.rcsController.pods[2].omsPod[0].arm}`;
     }
 
     let txt = "";
