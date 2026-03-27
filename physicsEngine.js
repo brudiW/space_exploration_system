@@ -1,6 +1,5 @@
 import THREE from 'three.js';
 import { computeAthmospere, getAirDensity } from './calcTools.js';
-import { airDensityAtAltitude, airDensityDryAir } from 'weather-formulas/airDensity';
 import { densityFog } from 'three/tsl';
 
 const EARTH_RADIUS = 6378137;
