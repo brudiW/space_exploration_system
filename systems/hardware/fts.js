@@ -1,8 +1,6 @@
 export class FlightTerminationSystem {
     constructor() {
         this.activated = false;
-        
-        this.terminationSequencer()
     }
     terminator(msg) {
         if (msg[0] == "terminateConfirm") {
