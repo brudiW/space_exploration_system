@@ -25,6 +25,17 @@ export class SRB {
         this.seperated = false;
         this.TERMINATED = false;
     }
+    burn() {
+        if (!this.TERMINATED) {
+            if (this.ignited && this.propellantMass > 0) {
+                this.propellantMass -= 4028;
+            }
+        } else {
+            this.propellantMass = 0;
+            this.emptyMass = 0;
+            this.seperated = true;
+        }
+    }
     ignite() {
         this.ignited = true;
     }
