@@ -1019,12 +1019,8 @@ setInterval(() => { //ET Fuel Deplete
 
 setInterval(() => {
     if (OV) {
-        if (OV.SRBs.l.ignited && OV.SRBs.l.propellantMass > 0) {
-            OV.SRBs.l.propellantMass -= 4028;
-        }
-        if (OV.SRBs.r.ignited && OV.SRBs.r.propellantMass > 0) {
-            OV.SRBs.r.propellantMass -= 4028;
-        }
+        OV.SRBs.l.burn();
+        OV.SRBs.r.burn();
     }
 }, 1000);
 
@@ -1122,9 +1118,9 @@ const physicsCycle = setInterval(() => {
             }
         }
     } else {
-        if (!OV.et.jettisoned) totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
-        if (!OV.SRBs.l.seperated) totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
-        if (!OV.SRBs.r.seperated) totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
+        if (!OV.et.jettisoned && !OV.et.TERMINATED) totalMass += (OV.et.emptyMass + OV.et.lox + OV.et.lh2);
+        if (!OV.SRBs.l.seperated && !OV.SRBs.l.TERMINATED) totalMass += (OV.SRBs.l.propellantMass + OV.SRBs.l.emptyMass);
+        if (!OV.SRBs.r.seperated && !OV.SRBs.r.TERMINATED) totalMass += (OV.SRBs.r.propellantMass + OV.SRBs.r.emptyMass);
 
         // 1. Schubkraft berechnen
         if (h < 50000) {
@@ -1143,8 +1139,8 @@ const physicsCycle = setInterval(() => {
         }
 
 
-        if (OV.SRBs.l.ignited && !OV.SRBs.l.seperated) totalThrustN += 13300000;
-        if (OV.SRBs.r.ignited && !OV.SRBs.r.seperated) totalThrustN += 13300000;
+        if (OV.SRBs.l.ignited && !OV.SRBs.l.seperated && !OV.SRBs.l.TERMINATED) totalThrustN += 13300000;
+        if (OV.SRBs.r.ignited && !OV.SRBs.r.seperated && !OV.SRBs.r.TERMINATED) totalThrustN += 13300000;
     }
 
     physicsEngine.physicsObjects['OV'].setMass(totalMass);
