@@ -13,13 +13,24 @@ export class ET {
         this.TERMINATED = false;
     }
     drain(ctr, l, r) {
-        if (!this.jettisoned) {
-            if (this.lox > 30 && this.lh2 > 30) {
-                this.lh2 -= (((ctr.thrust * 70.3) / 104.5)/10 + ((l.thrust * 70.3) / 104.5)/10 + ((r.thrust * 70.3) / 104.5)/10);
-                this.lox -= (((ctr.thrust * 423.65) / 104.5)/10 + ((l.thrust * 423.65) / 104.5)/10 + ((r.thrust * 423.65) / 104.5)/10);
-            } else {
-                OV.computers.programHandler.exec("SSMEshutDown", global.OV.computers.gpc4);
+        if (!this.TERMINATED) {
+            if (!this.jettisoned) {
+                if (this.lox > 30 && this.lh2 > 30) {
+                    this.lh2 -= (((ctr.thrust * 70.3) / 104.5)/10 + ((l.thrust * 70.3) / 104.5)/10 + ((r.thrust * 70.3) / 104.5)/10);
+                    this.lox -= (((ctr.thrust * 423.65) / 104.5)/10 + ((l.thrust * 423.65) / 104.5)/10 + ((r.thrust * 423.65) / 104.5)/10);
+                } else {
+                    OV.computers.programHandler.exec("SSMEshutDown", global.OV.computers.gpc4);
+                }
             }
+        } else {
+            this.lox = 0;
+            this.lh2 = 0;
+            this.loxTemp = 0;
+            this.lh2Temp = 0;
+            this.loxPress = 0;
+            this.lh2Press = 0;
+            this.emptyMass = 0;
+            this.jettisoned = true;
         }
     }
     drainTank(valvePercent) {
