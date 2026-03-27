@@ -708,11 +708,14 @@ app.post("/api/ov/rOMS/disarm", (req, res) => {
 
 app.post("/api/ov/imu/setPos", (req, res) => {
     const { axis } = req.body;
+    // setPos!!!!
+    res.json({ok: true});
 })
 app.post("/api/ov/imu/resetPos", (req, res) => {
     OV.IMU.pitch = 0;
     OV.IMU.roll = 0;
     OV.IMU.yaw = 0;
+    res.json({ok: true});
 })
 
 app.post("/api/ov/takeOver", (req, res) => {
