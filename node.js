@@ -7,12 +7,10 @@ import THREE from 'three.js';
 
 import { CoordsToGroundVector, groundVectorToCoords, groundVectorToLocalFacingVector, groundVectorToLocationVector, computeAthmospere, destinationPoint, distanceAndHeading } from "./calcTools.js";
 
-import { Orbitalmodell } from "./orbitModell.js";
 import { PhysicsEngine, SpaceObject, DockingPort } from './physicsEngine.js';
 
 
 globalThis.physicsEngine = new PhysicsEngine();
-const orbit = new Orbitalmodell();
 
 
 
