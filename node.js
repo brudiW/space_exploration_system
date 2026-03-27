@@ -836,19 +836,23 @@ app.post("/api/ov/cdr_sfd1", (req, res) => {
 app.post("/api/ov/abortMode/SE", (req, res) => {
     const { mode } = req.body;
     OV.intactAbortMode.singleEngine = mode;
+    res.json({ok: true});
 })
 app.post("/api/ov/abortMode/2E", (req, res) => {
     const { mode } = req.body;
     OV.intactAbortMode.twoEngine = mode;
+    res.json({ok: true});
 })
 
 app.post("/api/ov/abortMode/3E", (req, res) => {
     const { mode } = req.body;
     OV.intactAbortMode.threeEngine = mode;
+    res.json({ok: true});
 })
 
 app.post("/api/ov/intactAbort", (req, res) => {
     OV.inIntactAbort = true;
+    res.json({ok: true});
     //OV.computers.maneuverHandlerTool.maneuverTo({pitch: -179, roll: 0, yaw: 76.7})
 })
 
@@ -859,10 +863,12 @@ app.post("/api/ov/intactAbort", (req, res) => {
 app.post("/api/ov/dragChute/deploy", (req, res) => {
     OV.dragChute.deployed = true;
     OV.brakes.applied = true;
+    res.json({ok: true});
 })
 
 app.post("/api/ov/dragChute/jettison", (req, res) => {
     OV.dragChute.jettisoned = true;
+    res.json({ok: true});
 })
 
 
@@ -975,8 +981,8 @@ app.get("/api/mc/ov", (req, res) => {
 
 app.post("/api/mc/terminate", (req, res) => {
     const { part } = req.body;
-    const fts_channel = new BroadcastChannel("FTS Uplink");
-    fts_channel.postMessage(["terminateConfirm", part])
+    OV.fts.terminator(["terminateConfirm", part])
+    res.json({ok: true});
 })
 
 app.get("/api/mc/ov/events", (req, res) => {
